@@ -4,15 +4,46 @@
 
 @layer base {
   :root {
-    --background: #f7f1ea;
-    --bg-alt: #efe5d8;
-    --card: #fffdf9;
-    --text: #3b2e22;
-    --muted: #9c8a78;
-    --accent: #c0704a;
-    --accent-soft: #f5e6db;
-    --highlight: #7a8b6f;
-    --border: #e0d4c4;
+    /* Brand palette stored as HSL channels so Tailwind opacity
+       modifiers (e.g. bg-primary/90) resolve correctly. */
+
+    /* Surfaces */
+    --background: 32 45% 94%;        /* #f7f1ea */
+    --foreground: 29 27% 18%;        /* #3b2e22 */
+
+    --card: 40 100% 99%;             /* #fffdf9 */
+    --card-foreground: 29 27% 18%;
+
+    --popover: 40 100% 99%;
+    --popover-foreground: 29 27% 18%;
+
+    /* Brand actions */
+    --primary: 19 48% 52%;           /* #c0704a terracotta */
+    --primary-foreground: 40 100% 99%;
+
+    --secondary: 34 42% 89%;         /* #efe5d8 */
+    --secondary-foreground: 29 27% 18%;
+
+    --muted: 34 42% 89%;
+    --muted-foreground: 30 15% 54%;  /* #9c8a78 */
+
+    --accent: 25 57% 91%;            /* #f5e6db soft peach (hover bg) */
+    --accent-foreground: 29 27% 18%;
+
+    --destructive: 11 62% 43%;       /* #b3432a warm brick red */
+    --destructive-foreground: 40 100% 99%;
+
+    /* Lines & focus */
+    --border: 34 31% 82%;            /* #e0d4c4 */
+    --input: 34 31% 82%;
+    --ring: 19 48% 52%;
+
+    /* Extras outside the shadcn convention */
+    --bg-alt: 34 42% 89%;
+    --accent-soft: 25 57% 91%;
+    --highlight: 96 11% 49%;         /* #7a8b6f sage */
+    --highlight-foreground: 40 100% 99%;
+
     --radius: 0.5rem;
   }
 }
@@ -21,7 +52,10 @@
   * {
     @apply border-border;
   }
+  html {
+    color: hsl(var(--foreground));
+  }
   body {
-    @apply bg-background;
+    @apply bg-background text-foreground;
   }
 }

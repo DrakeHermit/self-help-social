@@ -58,16 +58,22 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+      <Card className="border-border/70 bg-card text-card-foreground shadow-lg shadow-foreground/5">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl tracking-tight text-foreground">
+            Create your account
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Start tracking the little things you do for yourself.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-foreground">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -78,9 +84,9 @@ export function SignUpForm({
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+                <Label htmlFor="password" className="text-foreground">
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -90,9 +96,9 @@ export function SignUpForm({
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
+                <Label htmlFor="repeat-password" className="text-foreground">
+                  Repeat Password
+                </Label>
                 <Input
                   id="repeat-password"
                   type="password"
@@ -101,14 +107,19 @@ export function SignUpForm({
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link
+                href="/auth/login"
+                className="font-medium text-primary underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
+              >
                 Login
               </Link>
             </div>

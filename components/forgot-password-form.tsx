@@ -47,32 +47,40 @@ export function ForgotPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+        <Card className="border-border/70 bg-card text-card-foreground shadow-lg shadow-foreground/5">
+          <CardHeader className="space-y-2 border-l-4 border-highlight pl-5">
+            <CardTitle className="text-2xl tracking-tight text-foreground">
+              Check your email
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Password reset instructions sent.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
               If you registered using your email and password, you will receive
-              a password reset email.
+              a password reset email shortly.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
+        <Card className="border-border/70 bg-card text-card-foreground shadow-lg shadow-foreground/5">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl tracking-tight text-foreground">
+              Reset your password
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Enter your email and we&apos;ll send you a link to reset your
+              password.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleForgotPassword}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-foreground">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -82,16 +90,20 @@ export function ForgotPasswordForm({
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                {error && (
+                  <p className="text-sm font-medium text-destructive">
+                    {error}
+                  </p>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Sending..." : "Send reset email"}
                 </Button>
               </div>
-              <div className="mt-4 text-center text-sm">
+              <div className="mt-4 text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link
                   href="/auth/login"
-                  className="underline underline-offset-4"
+                  className="font-medium text-primary underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
                 >
                   Login
                 </Link>
