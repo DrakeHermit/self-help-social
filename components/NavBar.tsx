@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { Bell, Compass, Home, Search, Target, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -83,28 +86,26 @@ export const NavBar = () => {
         </div>
 
         <div className="absolute inset-y-0 right-0 flex items-center justify-end gap-2 px-4 sm:gap-3 sm:px-6 lg:relative lg:inset-y-auto lg:right-auto lg:w-72 lg:shrink-0 lg:border-l lg:border-white/5 lg:px-4">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label="Notifications"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-[#d9cbb8] transition-colors hover:bg-white/5 hover:text-[#f5ece0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+            className="relative size-10 rounded-full text-[#d9cbb8] hover:bg-white/5 hover:text-[#f5ece0] [&_svg]:size-5"
           >
-            <Bell className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+            <Bell strokeWidth={1.75} aria-hidden="true" />
             <span className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-[#2a221b]" />
-          </button>
+          </Button>
 
           <label className="relative hidden items-center lg:flex">
             <Search
-              className="pointer-events-none absolute left-3 h-4 w-4 text-[#8a7b69]"
+              className="pointer-events-none absolute left-3 z-10 h-4 w-4 text-[#8a7b69]"
               aria-hidden="true"
             />
-            <input
+            <Input
               type="search"
               placeholder="search people, habits..."
-              className={cn(
-                "h-10 w-48 rounded-full bg-[#3a2e25] pl-9 pr-4 text-sm text-[#f1e7d9]",
-                "placeholder:text-[#8a7b69] ring-1 ring-inset ring-white/5",
-                "focus:outline-none focus:ring-2 focus:ring-primary/60",
-              )}
+              className="h-10 w-50 rounded-full border-0 bg-[#3a2e25] pl-9 pr-4 text-[#f1e7d9] shadow-none ring-1 ring-inset ring-white/5 placeholder:text-[#8a7b69] focus-visible:ring-2 focus-visible:ring-primary/60"
             />
           </label>
 
@@ -118,12 +119,11 @@ export const NavBar = () => {
               youActive ? "bg-white/5" : "hover:bg-white/5",
             )}
           >
-            <span
-              aria-hidden="true"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold uppercase tracking-wide text-primary-foreground"
-            >
-              YO
-            </span>
+            <Avatar>
+              <AvatarFallback className="bg-primary text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+                YO
+              </AvatarFallback>
+            </Avatar>
           </Link>
         </div>
       </div>
