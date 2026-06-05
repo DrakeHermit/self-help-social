@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Compass, Home, Search, Target, Users } from "lucide-react";
+import { Bell, Compass, Home, Search, Sprout, Target, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FEATURES } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -21,6 +22,9 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Discover", href: "/discover", icon: Compass },
   { label: "Partners", href: "/partners", icon: Users },
   { label: "Habits", href: "/habits", icon: Target },
+  ...(FEATURES.garden
+    ? [{ label: "Garden", href: "/garden", icon: Sprout }]
+    : []),
 ];
 
 const isActivePath = (pathname: string, href: string) => {

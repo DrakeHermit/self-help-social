@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Home, Target, User, Users } from "lucide-react";
+import { Compass, Home, Sprout, Target, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { FEATURES } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 type MobileNavItem = {
@@ -17,8 +18,10 @@ const MOBILE_NAV_ITEMS: MobileNavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Find", href: "/discover", icon: Compass },
   { label: "Habits", href: "/habits", icon: Target },
+  ...(FEATURES.garden
+    ? [{ label: "Garden", href: "/garden", icon: Sprout }]
+    : []),
   { label: "Partners", href: "/partners", icon: Users },
-  { label: "You", href: "/profile", icon: User },
 ];
 
 const isActivePath = (pathname: string, href: string) => {
@@ -34,7 +37,12 @@ export const MobileNav = () => {
       aria-label="Primary"
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/5 bg-[#2a221b] text-[#f1e7d9] pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid h-16 grid-cols-5 items-stretch">
+      <ul
+        className="grid h-16 items-stretch"
+        style={{
+          gridTemplateColumns: `repeat(${MOBILE_NAV_ITEMS.length}, minmax(0, 1fr))`,
+        }}
+      >
         {MOBILE_NAV_ITEMS.map(({ label, href, icon: Icon }) => {
           const active = isActivePath(pathname, href);
           return (
