@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Compass, Home, Search, Sprout, Target, Users } from "lucide-react";
+import { Bell, Compass, Home, Search, Sprout, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,7 +21,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Discover", href: "/discover", icon: Compass },
   { label: "Partners", href: "/partners", icon: Users },
-  { label: "Habits", href: "/habits", icon: Target },
   ...(FEATURES.garden
     ? [{ label: "Garden", href: "/garden", icon: Sprout }]
     : []),

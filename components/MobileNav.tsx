@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Home, Sprout, Target, Users } from "lucide-react";
+import { Compass, Home, Sprout, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { FEATURES } from "@/lib/flags";
@@ -17,7 +17,6 @@ type MobileNavItem = {
 const MOBILE_NAV_ITEMS: MobileNavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Find", href: "/discover", icon: Compass },
-  { label: "Habits", href: "/habits", icon: Target },
   ...(FEATURES.garden
     ? [{ label: "Garden", href: "/garden", icon: Sprout }]
     : []),
