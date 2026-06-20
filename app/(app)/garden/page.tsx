@@ -1,12 +1,12 @@
 import { Lock, Plus, Sprout } from "lucide-react";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FEATURES } from "@/lib/flags";
+import ActivityHeatmap from "@/components/ActivityHeatmap";
 
 export default function GardenPage() {
-  // While auth gating is pending, the flag controls access. Replace this with a
-  // real signed-in check (and redirect to login) once auth is wired up.
   if (!FEATURES.garden) {
     notFound();
   }
@@ -26,10 +26,18 @@ export default function GardenPage() {
       <h1 className="mt-1 font-serif text-3xl tracking-tight text-foreground">
         tend your habits
       </h1>
-      <p className="mt-1 max-w-md text-sm text-muted-foreground">
+      <p className="my-4 max-w-md text-sm text-muted-foreground">
         your private space to grow habits at your own pace. nothing here is
         shared unless you choose to post it.
       </p>
+
+      <Suspense
+        fallback={
+          <div className="h-24 w-full animate-pulse rounded-md bg-muted" />
+        }
+      >
+        <ActivityHeatmap />
+      </Suspense>
 
       <div className="mt-8 flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-12 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-primary">
