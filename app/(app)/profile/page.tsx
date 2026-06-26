@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FEATURES } from "@/lib/flags";
 import ActivityHeatmap from "@/components/ActivityHeatmap";
 
-export default function GardenPage() {
+export default function ProfilePage() {
   if (!FEATURES.garden) {
     notFound();
   }

@@ -18,7 +18,7 @@ const MOBILE_NAV_ITEMS: MobileNavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Find", href: "/discover", icon: Compass },
   ...(FEATURES.garden
-    ? [{ label: "Garden", href: "/garden", icon: Sprout }]
+    ? [{ label: "Profile", href: "/profile", icon: Sprout }]
     : []),
   { label: "Partners", href: "/partners", icon: Users },
 ];

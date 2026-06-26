@@ -22,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Discover", href: "/discover", icon: Compass },
   { label: "Partners", href: "/partners", icon: Users },
   ...(FEATURES.garden
-    ? [{ label: "Garden", href: "/garden", icon: Sprout }]
+    ? [{ label: "Profile", href: "/profile", icon: Sprout }]
     : []),
 ];
 
