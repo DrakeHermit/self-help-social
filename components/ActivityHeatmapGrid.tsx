@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useLayoutEffect, useRef } from "react";
+
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +15,12 @@ import {
   type GridCell,
   type Level,
 } from "@/lib/heatmap";
+
+// useLayoutEffect runs before paint (so the heatmap renders already scrolled to
+// the current month, with no visible jump), but it warns during SSR. Fall back
+// to useEffect on the server to avoid that warning.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 const LEVEL_CLASSES: Record<Level, string> = {
   0: "bg-[#efe7db]",
@@ -74,75 +82,103 @@ type Props = {
 };
 
 export default function ActivityHeatmapGrid({ weeks, monthLabels }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const { activeDays, longestStreak } = computeStats(weeks);
   const today = todayISO();
 
+  // Before paint, scroll so today's column sits in the middle of the viewport,
+  // so the current month is what's visible first (no render-then-scroll jump).
+  // Past/future months scroll to either side. No-op when the grid already fits
+  // without scrolling. We query the DOM (rather than a ref) because the cell's
+  // ref is consumed by Radix's asChild Slot.
+  useIsomorphicLayoutEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const cell = container.querySelector<HTMLElement>('[data-today="true"]');
+    if (!cell) return;
+
+    const cellRect = cell.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const delta =
+      cellRect.left -
+      containerRect.left -
+      container.clientWidth / 2 +
+      cellRect.width / 2;
+
+    container.scrollLeft += delta;
+  }, []);
+
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="w-full">
-        <div className="flex gap-1.5">
-          <div className="w-9 shrink-0" aria-hidden />
-          <div className="grid flex-1 grid-flow-col auto-cols-fr gap-1">
-            {monthLabels.map((label, i) => (
-              <div
-                key={i}
-                className="font-mono text-[10px] uppercase tracking-wide leading-none text-muted-foreground"
-              >
-                <span className="whitespace-nowrap">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-2 flex items-stretch gap-1.5">
-          <div className="grid w-9 shrink-0 grid-rows-[repeat(7,minmax(0,1fr))] gap-1">
-            {WEEKDAY_LABELS.map((label, i) => (
-              <div
-                key={i}
-                className="flex items-center font-mono text-[10px] leading-none text-muted-foreground"
-              >
-                {label}
-              </div>
-            ))}
+      <div ref={scrollRef} className="w-full overflow-x-auto px-4 pb-1 sm:px-0">
+        <div className="min-w-[860px]">
+          <div className="flex gap-1.5">
+            <div className="w-9 shrink-0" aria-hidden />
+            <div className="grid flex-1 grid-flow-col auto-cols-fr gap-1">
+              {monthLabels.map((label, i) => (
+                <div
+                  key={i}
+                  className="font-mono text-[10px] uppercase leading-none tracking-wide text-muted-foreground"
+                >
+                  <span className="whitespace-nowrap">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid flex-1 grid-flow-col grid-rows-[repeat(7,minmax(0,1fr))] auto-cols-fr gap-1">
-            {weeks.map((week, weekIndex) =>
-              week.map((day, dayIndex) =>
-                day ? (
-                  <Tooltip key={day.date}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "aspect-square w-full rounded-[4px]",
-                          LEVEL_CLASSES[countToLevel(day.count)],
-                          day.date === today &&
-                            "ring-1 ring-foreground/50 ring-offset-1 ring-offset-card",
-                        )}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="font-medium">{formatDate(day.date)}</p>
-                      <p className="text-muted-foreground">
-                        {day.count === 0
-                          ? "nothing planted"
-                          : `${day.count} ${day.count === 1 ? "entry" : "entries"}`}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <div
-                    key={`pad-${weekIndex}-${dayIndex}`}
-                    className="aspect-square w-full"
-                  />
+          <div className="mt-2 flex items-stretch gap-1.5">
+            <div className="grid w-9 shrink-0 grid-rows-[repeat(7,minmax(0,1fr))] gap-1">
+              {WEEKDAY_LABELS.map((label, i) => (
+                <div
+                  key={i}
+                  className="flex items-center font-mono text-[10px] leading-none text-muted-foreground"
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid flex-1 grid-flow-col grid-rows-[repeat(7,minmax(0,1fr))] auto-cols-fr gap-1">
+              {weeks.map((week, weekIndex) =>
+                week.map((day, dayIndex) =>
+                  day ? (
+                    <Tooltip key={day.date}>
+                      <TooltipTrigger asChild>
+                        <div
+                          data-today={day.date === today ? "true" : undefined}
+                          className={cn(
+                            "aspect-square w-full rounded-[4px]",
+                            LEVEL_CLASSES[countToLevel(day.count)],
+                            day.date === today &&
+                              "ring-1 ring-foreground/50 ring-offset-1 ring-offset-card",
+                          )}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-medium">{formatDate(day.date)}</p>
+                        <p className="text-muted-foreground">
+                          {day.count === 0
+                            ? "nothing planted"
+                            : `${day.count} ${day.count === 1 ? "entry" : "entries"}`}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <div
+                      key={`pad-${weekIndex}-${dayIndex}`}
+                      className="aspect-square w-full"
+                    />
+                  ),
                 ),
-              ),
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0">
         <p className="font-mono text-xs text-muted-foreground">
           {activeDays} active days · longest streak {longestStreak} days
         </p>

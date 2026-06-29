@@ -9,7 +9,7 @@ export type ProfileViewProps = {
 
 export function ProfileView({ user }: ProfileViewProps) {
   return (
-    <div className="w-full px-6 pb-12 pt-8 sm:px-10 lg:px-12">
+    <div className="w-full px-4 pb-4 pt-8 sm:px-10 md:pb-12 lg:px-12">
       <div className="space-y-6">
         <ProfileHeader {...user} />
 
