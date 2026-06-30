@@ -16,9 +16,6 @@ import {
   type Level,
 } from "@/lib/heatmap";
 
-// useLayoutEffect runs before paint (so the heatmap renders already scrolled to
-// the current month, with no visible jump), but it warns during SSR. Fall back
-// to useEffect on the server to avoid that warning.
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
@@ -87,11 +84,6 @@ export default function ActivityHeatmapGrid({ weeks, monthLabels }: Props) {
   const { activeDays, longestStreak } = computeStats(weeks);
   const today = todayISO();
 
-  // Before paint, scroll so today's column sits in the middle of the viewport,
-  // so the current month is what's visible first (no render-then-scroll jump).
-  // Past/future months scroll to either side. No-op when the grid already fits
-  // without scrolling. We query the DOM (rather than a ref) because the cell's
-  // ref is consumed by Radix's asChild Slot.
   useIsomorphicLayoutEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -112,7 +104,7 @@ export default function ActivityHeatmapGrid({ weeks, monthLabels }: Props) {
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div ref={scrollRef} className="w-full overflow-x-auto px-4 pb-1 sm:px-0">
+      <div ref={scrollRef} className="w-full overflow-x-auto px-4 pb-1 lg:px-0">
         <div className="min-w-[860px]">
           <div className="flex gap-1.5">
             <div className="w-9 shrink-0" aria-hidden />
@@ -178,7 +170,7 @@ export default function ActivityHeatmapGrid({ weeks, monthLabels }: Props) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-4 lg:px-0">
         <p className="font-mono text-xs text-muted-foreground">
           {activeDays} active days · longest streak {longestStreak} days
         </p>
