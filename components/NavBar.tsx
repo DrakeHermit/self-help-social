@@ -31,7 +31,11 @@ const isActivePath = (pathname: string, href: string) => {
   return pathname === href || pathname.startsWith(`${href}/`);
 };
 
-export const NavBar = () => {
+export type NavBarProps = {
+  initials?: string;
+};
+
+export const NavBar = ({ initials }: NavBarProps) => {
   const pathname = usePathname() ?? "/";
   const youActive = isActivePath(pathname, "/profile");
 
@@ -124,7 +128,7 @@ export const NavBar = () => {
           >
             <Avatar>
               <AvatarFallback className="bg-primary text-xs font-semibold uppercase tracking-wide text-primary-foreground">
-                YO
+                {initials ?? "?"}
               </AvatarFallback>
             </Avatar>
           </Link>

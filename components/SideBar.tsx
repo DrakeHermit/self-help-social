@@ -13,7 +13,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export const SideBar = () => {
+export type SideBarProps = {
+  name?: string;
+  handle?: string;
+  initials?: string;
+};
+
+export const SideBar = ({ name, handle, initials }: SideBarProps) => {
   return (
     <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 flex-col border-r border-white/5 bg-[#2a221b] text-[#f1e7d9] md:flex">
       <div className="p-4">
@@ -29,14 +35,16 @@ export const SideBar = () => {
         <div className="flex items-center gap-3 px-1 py-1">
           <Avatar className="size-9">
             <AvatarFallback className="bg-primary text-xs font-semibold uppercase tracking-wide text-primary-foreground">
-              YO
+              {initials ?? "?"}
             </AvatarFallback>
           </Avatar>
           <div className="flex min-w-0 flex-1 flex-col leading-tight">
             <span className="truncate text-sm font-medium text-[#f5ece0]">
-              You
+              {name ?? "You"}
             </span>
-            <span className="truncate text-xs text-[#8a7b69]">@you</span>
+            <span className="truncate text-xs text-[#8a7b69]">
+              @{handle ?? "you"}
+            </span>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

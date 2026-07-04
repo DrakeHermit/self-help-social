@@ -1,20 +1,40 @@
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { notFound, redirect } from "next/navigation";
 
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FEATURES } from "@/lib/flags";
+import { getCurrentUser } from "@/lib/user";
+
+async function ProfileContent() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  return (
+    <ProfileView
+      user={{
+        name: user.name,
+        handle: user.handle,
+        joinedLabel: user.joinedLabel,
+        initials: user.initials,
+      }}
+    />
+  );
+}
 
 export default function ProfilePage() {
   if (!FEATURES.garden) {
     notFound();
   }
 
-  const user = {
-    name: "You",
-    handle: "you",
-    joinedLabel: "here since jan 2026",
-    initials: "YO",
-    bio: "trying to read more, scroll less. one small thing a day.",
-  };
-
-  return <ProfileView user={user} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="h-48 w-full animate-pulse rounded-2xl bg-muted" />
+      }
+    >
+      <ProfileContent />
+    </Suspense>
+  );
 }
