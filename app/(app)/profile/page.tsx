@@ -1,26 +1,40 @@
 import { Suspense } from "react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FEATURES } from "@/lib/flags";
 import { getCurrentUser } from "@/lib/user";
 
-async function ProfileContent() {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect("/auth/login");
-  }
+const DEMO_USER = {
+  name: "You",
+  handle: "you",
+  joinedLabel: "here since jan 2026",
+  initials: "YO",
+};
 
-  return (
-    <ProfileView
-      user={{
-        name: user.name,
-        handle: user.handle,
-        joinedLabel: user.joinedLabel,
-        initials: user.initials,
-      }}
-    />
-  );
+const BIO = "trying to read more, scroll less. one small thing a day.";
+
+const STATS = {
+  currentStreak: 0,
+  longestStreak: 0,
+  activeDays: 0,
+  totalDays: 371,
+  heldBy: 142,
+};
+
+async function ProfileContent() {
+  const current = await getCurrentUser();
+  const user = current ?? DEMO_USER;
+
+  const header = {
+    name: user.name,
+    handle: user.handle,
+    joinedLabel: user.joinedLabel,
+    initials: user.initials,
+    bio: BIO,
+  };
+
+  return <ProfileView user={header} stats={STATS} />;
 }
 
 export default function ProfilePage() {
