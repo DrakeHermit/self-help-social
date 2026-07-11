@@ -34,8 +34,8 @@ export function LoginForm({
 
     try {
       await login(email, password);
-      router.push("/garden");
-    } catch (error: unknown) {
+      router.push("/profile");
+    } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
