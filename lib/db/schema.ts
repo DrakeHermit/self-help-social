@@ -1,7 +1,15 @@
-import { pgTable, uuid, text, timestamp, date, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, pgSchema, uuid, text, timestamp, date, boolean } from 'drizzle-orm/pg-core';
+
+const authSchema = pgSchema('auth');
+
+export const authUsers = authSchema.table('users', {
+  id: uuid('id').primaryKey(),
+});
 
 export const profilesTable = pgTable('profiles', {
-  id: uuid('id').primaryKey(), 
+  id: uuid('id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

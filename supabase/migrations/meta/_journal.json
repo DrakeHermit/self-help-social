@@ -15,6 +15,13 @@
       "when": 1781766039292,
       "tag": "0001_tough_carlie_cooper",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786012828795,
+      "tag": "0002_rapid_clea",
+      "breakpoints": true
     }
   ]
 }
