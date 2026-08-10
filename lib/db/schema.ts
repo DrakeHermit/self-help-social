@@ -17,7 +17,7 @@ export const profilesTable = pgTable('profiles', {
 
 export const habits = pgTable('habits', {
   id: uuid('id').primaryKey(),
-  userId: uuid('user_id').references(() => profilesTable.id),
+  userId: uuid('user_id').references(() => profilesTable.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -26,7 +26,7 @@ export const habits = pgTable('habits', {
 
 export const habitEntries = pgTable('habit_entries', {
   id: uuid('id').primaryKey(),
-  habitId: uuid('habit_id').references(() => habits.id),
+  habitId: uuid('habit_id').references(() => habits.id, { onDelete: 'cascade' }),
   date: date('date').notNull(),
   completed: boolean('completed').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
