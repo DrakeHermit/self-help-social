@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
+import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FEATURES } from "@/lib/flags";
 import { getCurrentUser } from "@/lib/user";
@@ -43,11 +44,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <Suspense
-      fallback={
-        <div className="h-48 w-full animate-pulse rounded-2xl bg-muted" />
-      }
-    >
+    <Suspense fallback={<ProfileSkeleton />}>
       <ProfileContent />
     </Suspense>
   );

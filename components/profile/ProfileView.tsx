@@ -4,6 +4,7 @@ import { Plus, Sprout } from "lucide-react";
 import ActivityHeatmap from "@/components/ActivityHeatmap";
 import { Button } from "@/components/ui/button";
 import { ProfileHeader, type ProfileHeaderProps } from "./ProfileHeader";
+import { HeatmapSkeleton } from "./ProfileSkeleton";
 import { ProfileStats, type ProfileStatsProps } from "./ProfileStats";
 import { ProfileTabs } from "./ProfileTabs";
 
@@ -40,11 +41,7 @@ export function ProfileView({ user, stats }: ProfileViewProps) {
 
         <ProfileStats {...stats} />
 
-        <Suspense
-          fallback={
-            <div className="h-48 w-full animate-pulse rounded-2xl bg-muted" />
-          }
-        >
+        <Suspense fallback={<HeatmapSkeleton />}>
           <ActivityHeatmap />
         </Suspense>
 

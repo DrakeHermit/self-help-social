@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { MainContent } from "@/components/MainContent";
 import { MobileNav } from "@/components/MobileNav";
 import { NavBar } from "@/components/NavBar";
-import { RightAside } from "@/components/RightAside";
 import { SideBar } from "@/components/SideBar";
 import { getCurrentUser } from "@/lib/user";
 
@@ -38,7 +37,6 @@ export default function AppLayout({
           <SideBarWithUser />
         </Suspense>
         <MainContent>{children}</MainContent>
-        <RightAside />
       </div>
       <MobileNav />
     </div>
