@@ -59,3 +59,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Entrance animation: transform only, resting on a fully visible base so
+   SSR / no-JS / print never show blank content. */
+@keyframes rise-in {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .animate-rise-in {
+    animation: rise-in 0.35s ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in {
+    animation: none;
+  }
+}

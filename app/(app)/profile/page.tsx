@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
+import { type HabitFolder } from "@/components/profile/HabitFolderCard";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FEATURES } from "@/lib/flags";
@@ -23,6 +24,39 @@ const STATS = {
   heldBy: 142,
 };
 
+const FOLDERS: HabitFolder[] = [
+  {
+    id: "reading",
+    name: "reading",
+    icon: "book",
+    tint: "terracotta",
+    cadence: "daily",
+    target: 20,
+    entryCount: 42,
+    lastEntryLabel: "yesterday",
+  },
+  {
+    id: "morning-walk",
+    name: "morning walk",
+    icon: "walk",
+    tint: "sage",
+    cadence: "daily",
+    target: null,
+    entryCount: 18,
+    lastEntryLabel: "2 days ago",
+  },
+  {
+    id: "water",
+    name: "water",
+    icon: "water",
+    tint: "sand",
+    cadence: "daily",
+    target: 8,
+    entryCount: 60,
+    lastEntryLabel: "today",
+  },
+];
+
 async function ProfileContent() {
   const current = await getCurrentUser();
   const user = current ?? DEMO_USER;
@@ -35,7 +69,7 @@ async function ProfileContent() {
     bio: BIO,
   };
 
-  return <ProfileView user={header} stats={STATS} />;
+  return <ProfileView user={header} stats={STATS} folders={FOLDERS} />;
 }
 
 export default function ProfilePage() {
