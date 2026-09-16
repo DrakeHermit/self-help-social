@@ -20,6 +20,8 @@ export type NewHabitFolderInput = Pick<
 
 export type NewHabitFolderProps = {
   onCreate: (input: NewHabitFolderInput) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
 const TINT_DOTS: Record<string, string> = {
@@ -32,8 +34,11 @@ const TINT_DOTS: Record<string, string> = {
 const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function NewHabitFolder({ onCreate }: NewHabitFolderProps) {
-  const [open, setOpen] = useState(false);
+export function NewHabitFolder({
+  onCreate,
+  open,
+  onOpenChange,
+}: NewHabitFolderProps) {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState(FOLDER_ICON_KEYS[0]);
   const [tint, setTint] = useState(FOLDER_TINT_KEYS[0]);
@@ -50,7 +55,7 @@ export function NewHabitFolder({ onCreate }: NewHabitFolderProps) {
 
   function close() {
     reset();
-    setOpen(false);
+    onOpenChange(false);
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -71,7 +76,7 @@ export function NewHabitFolder({ onCreate }: NewHabitFolderProps) {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => onOpenChange(true)}
         className="flex h-full min-h-[10rem] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-card/40 p-5 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Plus strokeWidth={2} aria-hidden />

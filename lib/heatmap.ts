@@ -42,6 +42,7 @@ export function countToLevel(count: number): Level {
 
 export function generateHeatmapGrid(
   year: number = new Date().getFullYear(),
+  counts?: Map<string, number>,
 ): GridCell[][] {
   const start = new Date(year, 0, 1);
   start.setDate(start.getDate() - start.getDay());
@@ -56,7 +57,8 @@ export function generateHeatmapGrid(
     const week: GridCell[] = [];
     for (let d = 0; d < DAYS_PER_WEEK; d++) {
       if (cursor.getFullYear() === year) {
-        week.push({ date: toLocalISODate(cursor), count: 0 });
+        const date = toLocalISODate(cursor);
+        week.push({ date, count: counts?.get(date) ?? 0 });
       } else {
         week.push(null);
       }

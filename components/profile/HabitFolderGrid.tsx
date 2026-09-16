@@ -1,29 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
+import { createHabit } from "@/actions/habits";
+import { cn } from "@/lib/utils";
 import { HabitFolderCard, type HabitFolder } from "./HabitFolderCard";
 import { NewHabitFolder, type NewHabitFolderInput } from "./NewHabitFolder";
 
 export type HabitFolderGridProps = {
-  initialFolders: HabitFolder[];
+  folders: HabitFolder[];
 };
 
-export function HabitFolderGrid({ initialFolders }: HabitFolderGridProps) {
-  const [folders, setFolders] = useState<HabitFolder[]>(initialFolders);
+export function HabitFolderGrid({ folders }: HabitFolderGridProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [composing, setComposing] = useState(false);
 
   function handleCreate(input: NewHabitFolderInput) {
-    const folder: HabitFolder = {
-      id: crypto.randomUUID(),
-      entryCount: 0,
-      lastEntryLabel: null,
-      ...input,
-    };
-    setFolders((prev) => [folder, ...prev]);
+    startTransition(async () => {
+      await createHabit(input.name);
+      router.refresh();
+    });
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-4 transition-opacity md:grid-cols-2 lg:grid-cols-3",
+        composing && "items-start",
+        isPending && "opacity-70",
+      )}
+    >
       {folders.map((folder, index) => (
         <div
           key={folder.id}
@@ -37,7 +45,11 @@ export function HabitFolderGrid({ initialFolders }: HabitFolderGridProps) {
         className="animate-rise-in"
         style={{ animationDelay: `${Math.min(folders.length, 8) * 40}ms` }}
       >
-        <NewHabitFolder onCreate={handleCreate} />
+        <NewHabitFolder
+          onCreate={handleCreate}
+          open={composing}
+          onOpenChange={setComposing}
+        />
       </div>
     </div>
   );

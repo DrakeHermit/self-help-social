@@ -2,12 +2,18 @@ import { connection } from "next/server";
 
 import ActivityHeatmapGrid from "@/components/ActivityHeatmapGrid";
 import { Card } from "@/components/ui/card";
+import { getDailyEntryCounts } from "@/lib/habits";
 import { generateHeatmapGrid, getMonthLabels } from "@/lib/heatmap";
 
-const ActivityHeatmap = async () => {
+type ActivityHeatmapProps = {
+  userId?: string;
+};
+
+const ActivityHeatmap = async ({ userId }: ActivityHeatmapProps) => {
   await connection();
   const year = new Date().getFullYear();
-  const weeks = generateHeatmapGrid(year);
+  const counts = userId ? await getDailyEntryCounts(userId, year) : undefined;
+  const weeks = generateHeatmapGrid(year, counts);
   const monthLabels = getMonthLabels(weeks);
 
   return (
