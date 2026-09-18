@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 import {
   FOLDER_TINT_KEYS,
@@ -8,8 +8,7 @@ import {
 import { type ProfileStatsProps } from "@/components/profile/ProfileStats";
 import { db } from "@/lib/db";
 import { habitEntries, habits } from "@/lib/db/schema";
-
-const DAY_MS = 86_400_000;
+import { dayNumber, relativeDayLabel, toISODate } from "@/lib/dates";
 
 const ICON_KEYWORDS: [RegExp, string][] = [
   [/read|book|page/, "book"],
@@ -36,27 +35,8 @@ function tintForId(id: string): string {
   return FOLDER_TINT_KEYS[hash % FOLDER_TINT_KEYS.length];
 }
 
-function toISODate(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function dayNumber(iso: string): number {
-  const [year, month, day] = iso.split("-").map(Number);
-  return Date.UTC(year, month - 1, day) / DAY_MS;
-}
-
 function daysInYear(year: number): number {
   return new Date(year, 1, 29).getMonth() === 1 ? 366 : 365;
-}
-
-function relativeDayLabel(iso: string | null, today: string): string | null {
-  if (!iso) return null;
-  const diff = dayNumber(today) - dayNumber(iso);
-  if (diff <= 0) return "today";
-  if (diff === 1) return "yesterday";
-  return `${diff} days ago`;
 }
 
 export const getHabitFolders = cache(
@@ -90,7 +70,9 @@ export const getHabitFolders = cache(
       cadence: null,
       target: null,
       entryCount: row.entryCount,
-      lastEntryLabel: relativeDayLabel(row.lastEntryDate, today),
+      lastEntryLabel: row.lastEntryDate
+        ? relativeDayLabel(row.lastEntryDate, today)
+        : null,
     }));
   },
 );
@@ -118,9 +100,9 @@ export const getDailyEntryCounts = cache(
   },
 );
 
-export type HabitDay = {
+export type HabitNote = {
   date: string;
-  completed: boolean;
+  note: string;
 };
 
 export type HabitDetail = {
@@ -129,18 +111,15 @@ export type HabitDetail = {
   description: string | null;
   icon: string;
   tint: string;
-  days: HabitDay[];
-  completedCount: number;
+  notes: HabitNote[];
+  loggedDates: string[];
+  entryCount: number;
   currentStreak: number;
   longestStreak: number;
 };
 
 export const getHabitDetail = cache(
-  async (
-    userId: string,
-    habitId: string,
-    windowDays = 28,
-  ): Promise<HabitDetail | null> => {
+  async (userId: string, habitId: string): Promise<HabitDetail | null> => {
     const [habit] = await db
       .select({
         id: habits.id,
@@ -154,23 +133,24 @@ export const getHabitDetail = cache(
     if (!habit) return null;
 
     const entries = await db
-      .select({ date: habitEntries.date, completed: habitEntries.completed })
+      .select({
+        date: habitEntries.date,
+        completed: habitEntries.completed,
+        note: habitEntries.note,
+      })
       .from(habitEntries)
-      .where(eq(habitEntries.habitId, habit.id));
+      .where(eq(habitEntries.habitId, habit.id))
+      .orderBy(desc(habitEntries.date));
 
-    const byDate = new Map(entries.map((entry) => [entry.date, entry.completed]));
-    const completedDates = entries
-      .filter((entry) => entry.completed)
-      .map((entry) => entry.date);
-    const { current, longest } = streaks(completedDates);
+    const notes: HabitNote[] = [];
+    const loggedDates: string[] = [];
+    for (const entry of entries) {
+      const note = entry.note?.trim();
+      if (note) notes.push({ date: entry.date, note });
+      if (entry.completed) loggedDates.push(entry.date);
+    }
 
-    const today = new Date();
-    const days: HabitDay[] = Array.from({ length: windowDays }, (_, offset) => {
-      const day = new Date(today);
-      day.setDate(day.getDate() - offset);
-      const date = toISODate(day);
-      return { date, completed: byDate.get(date) ?? false };
-    });
+    const { current, longest } = streaks(loggedDates);
 
     return {
       id: habit.id,
@@ -178,8 +158,9 @@ export const getHabitDetail = cache(
       description: habit.description,
       icon: iconForName(habit.name),
       tint: tintForId(habit.id),
-      days,
-      completedCount: completedDates.length,
+      notes,
+      loggedDates,
+      entryCount: loggedDates.length,
       currentStreak: current,
       longestStreak: longest,
     };

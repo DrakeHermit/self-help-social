@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
 import { habitEntries, habits } from "@/lib/db/schema";
+import { dayNumber, isValidISODate, todayISO } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/user";
 
 async function requireOwnedHabit(habitId: string): Promise<string> {
@@ -46,12 +47,19 @@ export async function createHabit(
   return habit.id;
 }
 
-export async function setHabitEntry(
+export async function saveHabitNote(
   habitId: string,
   date: string,
-  completed: boolean,
+  note: string,
 ): Promise<void> {
   await requireOwnedHabit(habitId);
+
+  if (!isValidISODate(date)) throw new Error("That isn't a real date.");
+  if (dayNumber(date) > dayNumber(todayISO())) {
+    throw new Error("You can't write ahead of today.");
+  }
+
+  const trimmed = note.trim();
 
   const [existing] = await db
     .select({ id: habitEntries.id })
@@ -59,17 +67,22 @@ export async function setHabitEntry(
     .where(and(eq(habitEntries.habitId, habitId), eq(habitEntries.date, date)))
     .limit(1);
 
-  if (existing) {
+  if (!trimmed) {
+    if (existing) {
+      await db.delete(habitEntries).where(eq(habitEntries.id, existing.id));
+    }
+  } else if (existing) {
     await db
       .update(habitEntries)
-      .set({ completed, updatedAt: new Date() })
+      .set({ note: trimmed, completed: true, updatedAt: new Date() })
       .where(eq(habitEntries.id, existing.id));
   } else {
     await db.insert(habitEntries).values({
       id: randomUUID(),
       habitId,
       date,
-      completed,
+      note: trimmed,
+      completed: true,
     });
   }
 

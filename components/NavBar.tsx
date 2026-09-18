@@ -35,8 +35,11 @@ export type NavBarProps = {
   initials?: string;
 };
 
-export const NavBar = ({ initials }: NavBarProps) => {
-  const pathname = usePathname() ?? "/";
+type NavBarViewProps = NavBarProps & {
+  pathname: string;
+};
+
+const NavBarView = ({ initials, pathname }: NavBarViewProps) => {
   const youActive = isActivePath(pathname, "/profile");
 
   return (
@@ -137,3 +140,12 @@ export const NavBar = ({ initials }: NavBarProps) => {
     </nav>
   );
 };
+
+export const NavBar = ({ initials }: NavBarProps) => {
+  const pathname = usePathname() ?? "/";
+  return <NavBarView initials={initials} pathname={pathname} />;
+};
+
+export const NavBarFallback = ({ initials }: NavBarProps) => (
+  <NavBarView initials={initials} pathname="" />
+);

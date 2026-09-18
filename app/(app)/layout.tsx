@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 
 import { MainContent } from "@/components/MainContent";
-import { MobileNav } from "@/components/MobileNav";
-import { NavBar } from "@/components/NavBar";
+import { MobileNav, MobileNavFallback } from "@/components/MobileNav";
+import { NavBar, NavBarFallback } from "@/components/NavBar";
 import { SideBar } from "@/components/SideBar";
 import { getCurrentUser } from "@/lib/user";
 
@@ -29,7 +29,7 @@ export default function AppLayout({
 }>) {
   return (
     <div className="flex min-h-screen flex-col">
-      <Suspense fallback={<NavBar />}>
+      <Suspense fallback={<NavBarFallback />}>
         <NavBarWithUser />
       </Suspense>
       <div className="flex flex-1">
@@ -38,7 +38,9 @@ export default function AppLayout({
         </Suspense>
         <MainContent>{children}</MainContent>
       </div>
-      <MobileNav />
+      <Suspense fallback={<MobileNavFallback />}>
+        <MobileNav />
+      </Suspense>
     </div>
   );
 }

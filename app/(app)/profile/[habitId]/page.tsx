@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
-import { HabitDayList } from "@/components/profile/HabitDayList";
+import { HabitJournal } from "@/components/profile/HabitJournal";
+import { HabitSkeleton } from "@/components/profile/HabitSkeleton";
 import { Card } from "@/components/ui/card";
+import { todayISO } from "@/lib/dates";
 import { FEATURES } from "@/lib/flags";
 import { getHabitDetail } from "@/lib/habits";
 import { getCurrentUser } from "@/lib/user";
@@ -12,9 +15,7 @@ type HabitPageProps = {
   params: Promise<{ habitId: string }>;
 };
 
-export default async function HabitPage({ params }: HabitPageProps) {
-  if (!FEATURES.garden) notFound();
-
+async function HabitContent({ params }: HabitPageProps) {
   const { habitId } = await params;
   const user = await getCurrentUser();
   if (!user) notFound();
@@ -25,7 +26,7 @@ export default async function HabitPage({ params }: HabitPageProps) {
   const stats = [
     { label: "current streak", value: habit.currentStreak, unit: "days" },
     { label: "longest streak", value: habit.longestStreak, unit: "days" },
-    { label: "entries", value: habit.completedCount, unit: "total" },
+    { label: "entries", value: habit.entryCount, unit: "total" },
   ];
 
   return (
@@ -70,18 +71,22 @@ export default async function HabitPage({ params }: HabitPageProps) {
           ))}
         </div>
 
-        <Card className="rounded-2xl border-border/70 p-5 shadow-sm lg:p-6">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            last four weeks
-          </p>
-          <h2 className="mt-1.5 font-serif text-xl tracking-tight text-foreground">
-            tick off the days you showed up
-          </h2>
-          <div className="mt-4">
-            <HabitDayList habitId={habit.id} days={habit.days} />
-          </div>
-        </Card>
+        <HabitJournal
+          habitId={habit.id}
+          notes={habit.notes}
+          today={todayISO()}
+        />
       </div>
     </div>
+  );
+}
+
+export default function HabitPage({ params }: HabitPageProps) {
+  if (!FEATURES.garden) notFound();
+
+  return (
+    <Suspense fallback={<HabitSkeleton />}>
+      <HabitContent params={params} />
+    </Suspense>
   );
 }

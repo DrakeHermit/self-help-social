@@ -28,9 +28,11 @@ const isActivePath = (pathname: string, href: string) => {
   return pathname === href || pathname.startsWith(`${href}/`);
 };
 
-export const MobileNav = () => {
-  const pathname = usePathname() ?? "/";
+type MobileNavViewProps = {
+  pathname: string;
+};
 
+const MobileNavView = ({ pathname }: MobileNavViewProps) => {
   return (
     <nav
       aria-label="Primary"
@@ -73,3 +75,10 @@ export const MobileNav = () => {
     </nav>
   );
 };
+
+export const MobileNav = () => {
+  const pathname = usePathname() ?? "/";
+  return <MobileNavView pathname={pathname} />;
+};
+
+export const MobileNavFallback = () => <MobileNavView pathname="" />;
