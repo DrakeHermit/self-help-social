@@ -29,6 +29,13 @@
       "when": 1786384460518,
       "tag": "0003_uneven_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790411731375,
+      "tag": "0004_big_namor",
+      "breakpoints": true
     }
   ]
 }

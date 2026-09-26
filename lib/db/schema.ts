@@ -1,4 +1,6 @@
-import { pgTable, pgSchema, uuid, text, timestamp, date, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, pgSchema, uuid, text, timestamp, date, boolean, pgPolicy } from 'drizzle-orm/pg-core';
+import { authenticatedRole } from "drizzle-orm/supabase";
+import { sql } from "drizzle-orm";
 
 const authSchema = pgSchema('auth');
 
@@ -21,8 +23,31 @@ export const habits = pgTable('habits', {
   name: text('name').notNull(),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+  updatedAt: timestamp('updated_at').defaultNow().notNull(), 
+},
+(table) => [
+  pgPolicy("users can view their own habits", {
+    for: "select",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.userId}`,
+  }),
+  pgPolicy("users can insert their own habits", {
+    for: "insert",
+    to: authenticatedRole,
+    withCheck: sql`auth.uid() = ${table.userId}`,
+  }),
+  pgPolicy("users can update their own habits", {
+    for: "update",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.userId}`,
+    withCheck: sql`auth.uid() = ${table.userId}`,
+  }),
+  pgPolicy("users can delete their own habits", {
+    for: "delete",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.userId}`,
+  }),
+])
 
 export const habitEntries = pgTable('habit_entries', {
   id: uuid('id').primaryKey(),
@@ -32,7 +57,30 @@ export const habitEntries = pgTable('habit_entries', {
   note: text('note'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+},
+(table) => [
+  pgPolicy("users can view their own habit entries", {
+    for: "select",
+    to: authenticatedRole,
+    using: sql`exists (select 1 from ${habits} where ${habits.id} = ${table.habitId} and ${habits.userId} = auth.uid())`,
+  }),
+  pgPolicy("users can insert their own habit entries", {
+    for: "insert",
+    to: authenticatedRole,
+    withCheck: sql`exists (select 1 from ${habits} where ${habits.id} = ${table.habitId} and ${habits.userId} = auth.uid())`,
+  }),
+  pgPolicy("users can update their own habit entries", {
+    for: "update",
+    to: authenticatedRole,
+    using: sql`exists (select 1 from ${habits} where ${habits.id} = ${table.habitId} and ${habits.userId} = auth.uid())`,
+    withCheck: sql`exists (select 1 from ${habits} where ${habits.id} = ${table.habitId} and ${habits.userId} = auth.uid())`,
+  }),
+  pgPolicy("users can delete their own habit entries", {
+    for: "delete",
+    to: authenticatedRole,
+    using: sql`exists (select 1 from ${habits} where ${habits.id} = ${table.habitId} and ${habits.userId} = auth.uid())`,
+  }),
+])
 
 export type InsertProfile = typeof profilesTable.$inferInsert;
 export type SelectProfile = typeof profilesTable.$inferSelect;
