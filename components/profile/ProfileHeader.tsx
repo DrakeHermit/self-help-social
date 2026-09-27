@@ -18,8 +18,8 @@ export function ProfileHeader({
   bio,
 }: ProfileHeaderProps) {
   return (
-    <header className="-mx-4 -mt-12 overflow-hidden rounded-none border border-border/70 border-x-0 border-t-0 bg-card shadow-sm lg:mx-0 lg:mt-0 lg:rounded-3xl lg:border-x lg:border-t">
-      <div className="h-28 w-full bg-gradient-to-r from-[#f1e2d3] via-[#efe7db] to-[#dfe3d6]" />
+    <header className="-mt-12 overflow-hidden rounded-none border border-border/70 border-x-0 border-t-0 bg-card shadow-sm lg:mt-0 lg:rounded-3xl lg:border-x lg:border-t">
+      <div className="h-28 bg-gradient-to-r from-[#f1e2d3] via-[#efe7db] to-[#dfe3d6]" />
 
       <div className="px-4 pb-5 md:px-5 sm:px-6 sm:pb-6">
         <div className="-mt-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

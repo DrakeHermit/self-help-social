@@ -21,7 +21,7 @@ export function ProfileView({
   userId,
 }: ProfileViewProps) {
   return (
-    <div className="w-full pb-12 pt-8 lg:px-6 lg:pt-4">
+    <div className="pb-12 pt-8 lg:px-6 lg:pt-4">
       <div className="space-y-6">
         <ProfileHeader {...user} />
 

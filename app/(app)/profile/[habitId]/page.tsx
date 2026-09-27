@@ -30,14 +30,14 @@ async function HabitContent({ params }: HabitPageProps) {
   ];
 
   return (
-    <div className="w-full pb-12 pt-8 lg:px-6 lg:pt-4">
+    <div className="w-full px-3 pb-12 pt-8 lg:px-6 lg:pt-4">
       <div className="space-y-6">
         <div>
           <Link
             href="/profile"
-            className="inline-flex items-center gap-1.5 font-mono text-[11px] lowercase tracking-wide text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="-my-1 inline-flex items-center gap-2 py-1 font-mono text-sm lowercase tracking-wide text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+            <ArrowLeft className="size-4" aria-hidden />
             garden
           </Link>
           <h1 className="mt-3 font-serif text-2xl tracking-tight text-foreground sm:text-3xl">

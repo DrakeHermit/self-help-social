@@ -27,7 +27,7 @@ export function ProfileTabs({ garden }: ProfileTabsProps) {
       <div
         role="tablist"
         aria-label="profile sections"
-        className="flex items-center gap-6 border-b border-border/70"
+        className="flex items-center gap-6 border-b border-border/70 px-3 lg:px-0"
       >
         {TABS.map((tab) => {
           const isActive = active === tab.id;
@@ -51,7 +51,7 @@ export function ProfileTabs({ garden }: ProfileTabsProps) {
         })}
       </div>
 
-      <div className="pt-6">
+      <div className="px-3 pt-6 lg:px-0">
         {active === "garden" ? (
           garden
         ) : (

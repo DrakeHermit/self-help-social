@@ -17,7 +17,7 @@ const ActivityHeatmap = async ({ userId }: ActivityHeatmapProps) => {
   const monthLabels = getMonthLabels(weeks);
 
   return (
-    <Card className="-mx-4 rounded-none border-x-0 border-border/70 bg-card py-4 shadow-sm lg:mx-0 lg:w-full lg:rounded-2xl lg:border-x lg:p-6">
+    <Card className="rounded-none border-x-0 border-border/70 bg-card py-4 px-2 shadow-sm lg:w-full lg:rounded-2xl lg:border-x lg:p-6">
       <div className="flex items-baseline justify-between gap-4 px-4 lg:px-0">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           showing up
@@ -30,7 +30,7 @@ const ActivityHeatmap = async ({ userId }: ActivityHeatmapProps) => {
         a year of small things
       </h2>
 
-      <div className="mt-5">
+      <div className="mt-5 lg:px-0">
         <ActivityHeatmapGrid weeks={weeks} monthLabels={monthLabels} />
       </div>
     </Card>

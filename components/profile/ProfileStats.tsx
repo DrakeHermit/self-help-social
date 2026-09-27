@@ -29,7 +29,7 @@ export function ProfileStats({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+    <div className="grid grid-cols-2 gap-3 px-3 sm:grid-cols-4 sm:gap-4 lg:px-0">
       {stats.map((stat) => (
         <Card
           key={stat.label}

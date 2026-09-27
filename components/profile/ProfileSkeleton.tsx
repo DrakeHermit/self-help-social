@@ -18,7 +18,7 @@ const HEATMAP_CELLS = Array.from(
 
 export function HeatmapSkeleton() {
   return (
-    <Card className="-mx-4 rounded-none border-x-0 border-border/70 bg-card py-4 shadow-sm lg:mx-0 lg:w-full lg:rounded-2xl lg:border-x lg:p-6">
+    <Card className="rounded-none border-x-0 border-border/70 bg-card py-4 shadow-sm lg:w-full lg:rounded-2xl lg:border-x lg:p-6">
       <div className="flex items-baseline justify-between gap-4 px-4 lg:px-0">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           showing up
@@ -89,12 +89,12 @@ export function HeatmapSkeleton() {
 export function ProfileSkeleton() {
   return (
     <div
-      className="w-full pb-12 pt-8 lg:px-4 lg:pt-4"
+      className="w-full pb-12 pt-8 lg:px-6 lg:pt-4"
       role="status"
       aria-label="Loading profile"
     >
       <div className="space-y-6">
-        <header className="-mx-4 -mt-12 overflow-hidden rounded-none border border-border/70 border-x-0 border-t-0 bg-card shadow-sm lg:mx-0 lg:mt-0 lg:rounded-3xl lg:border-x lg:border-t">
+        <header className="-mt-12 overflow-hidden rounded-none border border-border/70 border-x-0 border-t-0 bg-card shadow-sm lg:mt-0 lg:rounded-3xl lg:border-x lg:border-t">
           <div className="h-28 w-full bg-gradient-to-r from-[#f1e2d3] via-[#efe7db] to-[#dfe3d6]" />
 
           <div className="px-4 pb-5 md:px-5 sm:px-6 sm:pb-6">
@@ -117,7 +117,7 @@ export function ProfileSkeleton() {
           </div>
         </header>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 px-3 sm:grid-cols-4 sm:gap-4 lg:px-0">
           {STAT_LABELS.map((label) => (
             <Card
               key={label}
@@ -137,7 +137,7 @@ export function ProfileSkeleton() {
         <HeatmapSkeleton />
 
         <div>
-          <div className="flex items-center gap-6 border-b border-border/70">
+          <div className="flex items-center gap-6 border-b border-border/70 px-3 lg:px-0">
             <span className="-mb-px border-b-2 border-primary pb-3 pt-1 text-sm font-medium lowercase text-foreground">
               garden
             </span>
@@ -145,7 +145,7 @@ export function ProfileSkeleton() {
               posts
             </span>
           </div>
-          <div className="pt-6">
+          <div className="px-3 pt-6 lg:px-0">
             <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-12">
               <Skeleton className="h-12 w-12 rounded-xl" />
               <div className="flex w-full flex-col items-center gap-2">

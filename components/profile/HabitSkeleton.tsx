@@ -11,14 +11,14 @@ const CALENDAR_CELLS = Array.from({ length: 35 }, (_, i) => i);
 export function HabitSkeleton() {
   return (
     <div
-      className="w-full pb-12 pt-8 lg:px-6 lg:pt-4"
+      className="w-full px-3 pb-12 pt-8 lg:px-6 lg:pt-4"
       role="status"
       aria-label="Loading habit"
     >
       <div className="space-y-6">
         <div>
-          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] lowercase tracking-wide text-muted-foreground">
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          <span className="-my-1 inline-flex items-center gap-2 py-1 font-mono text-sm lowercase tracking-wide text-muted-foreground">
+            <ArrowLeft className="size-4" aria-hidden />
             garden
           </span>
           <Skeleton className="mt-3 h-8 w-44 sm:h-9 sm:w-56" />
