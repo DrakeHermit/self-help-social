@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 export type HabitFolder = {
   id: string;
   name: string;
+  goal: string | null;
   icon: string;
   tint: string;
   cadence: string | null;

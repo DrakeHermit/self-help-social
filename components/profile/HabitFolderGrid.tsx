@@ -19,7 +19,7 @@ export function HabitFolderGrid({ folders }: HabitFolderGridProps) {
 
   function handleCreate(input: NewHabitFolderInput) {
     startTransition(async () => {
-      await createHabit(input.name);
+      await createHabit(input.name, input.goal);
       router.refresh();
     });
   }

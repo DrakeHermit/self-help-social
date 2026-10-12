@@ -45,6 +45,7 @@ export const getHabitFolders = cache(
       .select({
         id: habits.id,
         name: habits.name,
+        goal: habits.description,
         entryCount: sql<number>`count(${habitEntries.id})`.mapWith(Number),
         lastEntryDate: sql<string | null>`max(${habitEntries.date})`,
       })
@@ -57,7 +58,7 @@ export const getHabitFolders = cache(
         ),
       )
       .where(eq(habits.userId, userId))
-      .groupBy(habits.id, habits.name, habits.createdAt)
+      .groupBy(habits.id, habits.name, habits.description, habits.createdAt)
       .orderBy(asc(habits.createdAt));
 
     const today = toISODate(new Date());
@@ -65,6 +66,7 @@ export const getHabitFolders = cache(
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
+      goal: row.goal,
       icon: iconForName(row.name),
       tint: tintForId(row.id),
       cadence: null,

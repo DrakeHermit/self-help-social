@@ -82,6 +82,7 @@ export async function saveHabitNote(
       habitId,
       date,
       note: trimmed,
+      
       completed: true,
     });
   }

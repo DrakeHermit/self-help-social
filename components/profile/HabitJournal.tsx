@@ -32,8 +32,6 @@ export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
       <div className="space-y-6">
         <DayComposer
-          // Remount on a date change or a save so the box always opens with
-          // whatever that day currently holds.
           key={`${selected}:${saved}`}
           habitId={habitId}
           date={selected}

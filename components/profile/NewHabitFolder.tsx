@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,11 @@ import {
   FOLDER_TINT_KEYS,
   type HabitFolder,
 } from "./HabitFolderCard";
+import { Textarea } from "../ui/textarea";
 
 export type NewHabitFolderInput = Pick<
   HabitFolder,
-  "name" | "icon" | "tint" | "cadence" | "target"
+  "name" | "goal" | "icon" | "tint" | "cadence" | "target"
 >;
 
 export type NewHabitFolderProps = {
@@ -44,13 +45,16 @@ export function NewHabitFolder({
   const [tint, setTint] = useState(FOLDER_TINT_KEYS[0]);
   const [cadence, setCadence] = useState("daily");
   const [target, setTarget] = useState("");
-
+  const [goal, setGoal] = useState("");
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
   function reset() {
     setName("");
     setIcon(FOLDER_ICON_KEYS[0]);
     setTint(FOLDER_TINT_KEYS[0]);
     setCadence("daily");
     setTarget("");
+    setGoal("");
+    setDescriptionOpen(false);
   }
 
   function close() {
@@ -64,6 +68,7 @@ export function NewHabitFolder({
     if (!trimmed) return;
     onCreate({
       name: trimmed,
+      goal: goal.trim() || null,
       icon,
       tint,
       cadence,
@@ -91,7 +96,7 @@ export function NewHabitFolder({
       className="flex h-full flex-col gap-4 rounded-2xl border border-border/70 bg-card p-5 shadow-sm"
     >
       <div className="flex items-center justify-between">
-        <p className="font-serif text-lg text-foreground">new habit</p>
+        <p className="font-serif text-lg text-foreground">Create a new <span className="block font-bold text-primary">habit folder</span></p>
         <button
           type="button"
           onClick={close}
@@ -100,6 +105,33 @@ export function NewHabitFolder({
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
+      </div>
+      <div className="flex flex-col items-start gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={() => setDescriptionOpen((prev) => !prev)}
+          aria-label="what is a habit folder?"
+          aria-expanded={descriptionOpen}
+          aria-controls="folder-description"
+          className={cn(
+            "rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            descriptionOpen && "ring-2 ring-foreground/50",
+          )}
+        >
+          <Info className="h-4 w-4" aria-hidden />
+        </Button>
+        {descriptionOpen && (
+          <p
+            id="folder-description"
+            className="text-xs italic text-muted-foreground"
+          >
+            A habit folder is a collection of habits that are related to a
+            specific topic or goal. You can also add an entry to the folder to
+            track your progress.
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -113,6 +145,18 @@ export function NewHabitFolder({
           placeholder="e.g. reading"
           required
           autoFocus
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="folder-goal" className="lowercase text-foreground">
+          goal
+        </Label>
+        <Textarea
+          id="folder-goal"
+          value={goal}
+          onChange={(event) => setGoal(event.target.value)}
+          placeholder="e.g. I want to read 10 books this year"
         />
       </div>
 
