@@ -2,8 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Pencil, Trash2, X } from "lucide-react";
 
-import { addHabitNote } from "@/actions/habits";
+import { addHabitNote, deleteHabitNote, updateHabitNote } from "@/actions/habits";
 import { HabitCalendar } from "@/components/profile/HabitCalendar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,11 +22,20 @@ export type HabitJournalProps = {
 export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
   const router = useRouter();
   const [selected, setSelected] = useState(today);
+  const [filtered, setFiltered] = useState(false);
 
   const writtenDates = useMemo(
     () => new Set(notes.map((entry) => entry.date)),
     [notes],
   );
+  const visibleNotes = filtered
+    ? notes.filter((entry) => entry.date === selected)
+    : notes;
+
+  function selectDay(date: string) {
+    setSelected(date);
+    setFiltered(true);
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
@@ -40,36 +50,39 @@ export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
         />
 
         <section>
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            earlier
-          </h2>
-          {notes.length === 0 ? (
+          <div className="flex min-h-7 items-center gap-3">
+            <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              {filtered ? dayHeading(selected, today) : "earlier"}
+            </h2>
+            {filtered ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setFiltered(false)}
+                className="h-7 gap-1.5 rounded-full border-primary/40 bg-primary/10 px-3 lowercase text-foreground hover:bg-primary/20"
+              >
+                <X className="size-3.5" aria-hidden />
+                show all
+              </Button>
+            ) : null}
+          </div>
+          {visibleNotes.length === 0 ? (
             <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              nothing written here yet. whatever you put down today starts the
-              record.
+              {filtered
+                ? "nothing written on this day yet."
+                : "nothing written here yet. whatever you put down today starts the record."}
             </p>
           ) : (
             <ul className="mt-3 space-y-2">
-              {notes.map((entry) => (
-                <li key={entry.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(entry.date)}
-                    className={cn(
-                      "w-full rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                      entry.date === selected
-                        ? "border-primary/40 bg-card"
-                        : "border-border/70 bg-card/40 hover:border-primary/30",
-                    )}
-                  >
-                    <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {dayHeading(entry.date, today)}
-                    </span>
-                    <span className="mt-1.5 block whitespace-pre-line text-sm leading-relaxed text-foreground">
-                      {entry.note}
-                    </span>
-                  </button>
-                </li>
+              {visibleNotes.map((entry) => (
+                <EntryCard
+                  key={`${entry.id}:${entry.note}`}
+                  entry={entry}
+                  today={today}
+                  highlighted={!filtered && entry.date === selected}
+                  onChanged={() => router.refresh()}
+                />
               ))}
             </ul>
           )}
@@ -81,7 +94,7 @@ export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
           writtenDates={writtenDates}
           selected={selected}
           today={today}
-          onSelect={setSelected}
+          onSelect={selectDay}
         />
       </Card>
     </div>
@@ -170,5 +183,178 @@ function DayComposer({
         </div>
       </form>
     </Card>
+  );
+}
+
+type EntryCardProps = {
+  entry: HabitNote;
+  today: string;
+  highlighted: boolean;
+  onChanged: () => void;
+};
+
+function EntryCard({ entry, today, highlighted, onChanged }: EntryCardProps) {
+  const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [text, setText] = useState(entry.note);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const changed = text.trim() !== entry.note;
+
+  function run(action: () => Promise<void>, fallback: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await action();
+        onChanged();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : fallback);
+      }
+    });
+  }
+
+  function save() {
+    if (!changed || !text.trim()) return;
+    run(
+      () => updateHabitNote(entry.id, text),
+      "That didn't save. Try again?",
+    );
+  }
+
+  function cancel() {
+    setText(entry.note);
+    setError(null);
+    setEditing(false);
+  }
+
+  return (
+    <li
+      className={cn(
+        "rounded-2xl border px-4 py-3 transition-colors",
+        highlighted ? "border-primary/40 bg-card" : "border-border/70 bg-card/40",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+          {dayHeading(entry.date, today)}
+        </span>
+        {editing ? null : confirmingDelete ? (
+          <div className="-my-1.5 ml-auto flex items-center gap-1">
+            <span className="mr-1 font-mono text-[10px] lowercase text-muted-foreground">
+              delete?
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              disabled={isPending}
+              autoFocus
+              onClick={() =>
+                run(
+                  () => deleteHabitNote(entry.id),
+                  "That didn't delete. Try again?",
+                )
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setConfirmingDelete(false);
+              }}
+              className="h-7 rounded-full px-3 lowercase"
+            >
+              {isPending ? "deleting…" : "yes"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={isPending}
+              onClick={() => setConfirmingDelete(false)}
+              className="h-7 rounded-full px-3 lowercase"
+            >
+              no
+            </Button>
+          </div>
+        ) : (
+          <div className="-my-1.5 -mr-2 ml-auto flex items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={isPending}
+              onClick={() => setEditing(true)}
+              aria-label="Edit entry"
+              className="size-8 rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={isPending}
+              onClick={() => {
+                setError(null);
+                setConfirmingDelete(true);
+              }}
+              aria-label="Delete entry"
+              className="size-8 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            save();
+          }}
+        >
+          <Textarea
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") cancel();
+            }}
+            disabled={isPending}
+            rows={4}
+            autoFocus
+            className="mt-2 resize-y text-sm leading-relaxed"
+          />
+          <div className="mt-3 flex items-center gap-2">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isPending || !changed || !text.trim()}
+              className="rounded-full lowercase"
+            >
+              {isPending ? "saving…" : "save"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isPending}
+              onClick={cancel}
+              className="rounded-full lowercase"
+            >
+              cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground">
+          {entry.note}
+        </p>
+      )}
+
+      {error ? (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+    </li>
   );
 }
