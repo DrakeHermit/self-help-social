@@ -47,7 +47,27 @@ export async function createHabit(
   return habit.id;
 }
 
-export async function saveHabitNote(
+async function requireOwnedEntry(entryId: string): Promise<string> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("You need to be signed in.");
+
+  const [entry] = await db
+    .select({ habitId: habitEntries.habitId })
+    .from(habitEntries)
+    .innerJoin(habits, eq(habitEntries.habitId, habits.id))
+    .where(and(eq(habitEntries.id, entryId), eq(habits.userId, user.id)))
+    .limit(1);
+
+  if (!entry?.habitId) throw new Error("Entry not found.");
+  return entry.habitId;
+}
+
+function revalidateHabit(habitId: string) {
+  revalidatePath(`/profile/${habitId}`);
+  revalidatePath("/profile");
+}
+
+export async function addHabitNote(
   habitId: string,
   date: string,
   note: string,
@@ -60,33 +80,40 @@ export async function saveHabitNote(
   }
 
   const trimmed = note.trim();
+  if (!trimmed) throw new Error("Write something first.");
 
-  const [existing] = await db
-    .select({ id: habitEntries.id })
-    .from(habitEntries)
-    .where(and(eq(habitEntries.habitId, habitId), eq(habitEntries.date, date)))
-    .limit(1);
+  await db.insert(habitEntries).values({
+    id: randomUUID(),
+    habitId,
+    date,
+    note: trimmed,
+    completed: true,
+  });
 
-  if (!trimmed) {
-    if (existing) {
-      await db.delete(habitEntries).where(eq(habitEntries.id, existing.id));
-    }
-  } else if (existing) {
-    await db
-      .update(habitEntries)
-      .set({ note: trimmed, completed: true, updatedAt: new Date() })
-      .where(eq(habitEntries.id, existing.id));
-  } else {
-    await db.insert(habitEntries).values({
-      id: randomUUID(),
-      habitId,
-      date,
-      note: trimmed,
-      
-      completed: true,
-    });
-  }
+  revalidateHabit(habitId);
+}
 
-  revalidatePath(`/profile/${habitId}`);
-  revalidatePath("/profile");
+export async function updateHabitNote(
+  entryId: string,
+  note: string,
+): Promise<void> {
+  const habitId = await requireOwnedEntry(entryId);
+
+  const trimmed = note.trim();
+  if (!trimmed) throw new Error("An entry can't be empty. Delete it instead?");
+
+  await db
+    .update(habitEntries)
+    .set({ note: trimmed, updatedAt: new Date() })
+    .where(eq(habitEntries.id, entryId));
+
+  revalidateHabit(habitId);
+}
+
+export async function deleteHabitNote(entryId: string): Promise<void> {
+  const habitId = await requireOwnedEntry(entryId);
+
+  await db.delete(habitEntries).where(eq(habitEntries.id, entryId));
+
+  revalidateHabit(habitId);
 }

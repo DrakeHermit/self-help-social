@@ -46,7 +46,9 @@ export const getHabitFolders = cache(
         id: habits.id,
         name: habits.name,
         goal: habits.description,
-        entryCount: sql<number>`count(${habitEntries.id})`.mapWith(Number),
+        entryCount: sql<number>`count(distinct ${habitEntries.date})`.mapWith(
+          Number,
+        ),
         lastEntryDate: sql<string | null>`max(${habitEntries.date})`,
       })
       .from(habits)
@@ -84,7 +86,9 @@ export const getDailyEntryCounts = cache(
     const rows = await db
       .select({
         date: habitEntries.date,
-        count: sql<number>`count(*)`.mapWith(Number),
+        count: sql<number>`count(distinct ${habitEntries.habitId})`.mapWith(
+          Number,
+        ),
       })
       .from(habitEntries)
       .innerJoin(habits, eq(habitEntries.habitId, habits.id))
@@ -103,6 +107,7 @@ export const getDailyEntryCounts = cache(
 );
 
 export type HabitNote = {
+  id: string;
   date: string;
   note: string;
 };
@@ -136,21 +141,23 @@ export const getHabitDetail = cache(
 
     const entries = await db
       .select({
+        id: habitEntries.id,
         date: habitEntries.date,
         completed: habitEntries.completed,
         note: habitEntries.note,
       })
       .from(habitEntries)
       .where(eq(habitEntries.habitId, habit.id))
-      .orderBy(desc(habitEntries.date));
+      .orderBy(desc(habitEntries.date), desc(habitEntries.createdAt));
 
     const notes: HabitNote[] = [];
-    const loggedDates: string[] = [];
+    const logged = new Set<string>();
     for (const entry of entries) {
       const note = entry.note?.trim();
-      if (note) notes.push({ date: entry.date, note });
-      if (entry.completed) loggedDates.push(entry.date);
+      if (note) notes.push({ id: entry.id, date: entry.date, note });
+      if (entry.completed) logged.add(entry.date);
     }
+    const loggedDates = [...logged];
 
     const { current, longest } = streaks(loggedDates);
 

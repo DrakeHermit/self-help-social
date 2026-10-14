@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { saveHabitNote } from "@/actions/habits";
+import { addHabitNote } from "@/actions/habits";
 import { HabitCalendar } from "@/components/profile/HabitCalendar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,21 +22,20 @@ export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
   const router = useRouter();
   const [selected, setSelected] = useState(today);
 
-  const notesByDate = useMemo(
-    () => new Map(notes.map((entry) => [entry.date, entry.note])),
+  const writtenDates = useMemo(
+    () => new Set(notes.map((entry) => entry.date)),
     [notes],
   );
-  const saved = notesByDate.get(selected) ?? "";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
       <div className="space-y-6">
         <DayComposer
-          key={`${selected}:${saved}`}
+          key={selected}
           habitId={habitId}
           date={selected}
           today={today}
-          saved={saved}
+          hasEntries={writtenDates.has(selected)}
           onSaved={() => router.refresh()}
         />
 
@@ -52,7 +51,7 @@ export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
           ) : (
             <ul className="mt-3 space-y-2">
               {notes.map((entry) => (
-                <li key={entry.date}>
+                <li key={entry.id}>
                   <button
                     type="button"
                     onClick={() => setSelected(entry.date)}
@@ -79,7 +78,7 @@ export function HabitJournal({ habitId, notes, today }: HabitJournalProps) {
 
       <Card className="h-fit rounded-2xl border-border/70 p-4 shadow-sm lg:sticky lg:top-6">
         <HabitCalendar
-          writtenDates={new Set(notesByDate.keys())}
+          writtenDates={writtenDates}
           selected={selected}
           today={today}
           onSelect={setSelected}
@@ -93,7 +92,7 @@ type DayComposerProps = {
   habitId: string;
   date: string;
   today: string;
-  saved: string;
+  hasEntries: boolean;
   onSaved: () => void;
 };
 
@@ -101,22 +100,22 @@ function DayComposer({
   habitId,
   date,
   today,
-  saved,
+  hasEntries,
   onSaved,
 }: DayComposerProps) {
-  const [text, setText] = useState(saved);
+  const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const heading = dayHeading(date, today);
   const isToday = date === today;
-  const changed = text.trim() !== saved.trim();
 
   function save(value: string) {
     setError(null);
     startTransition(async () => {
       try {
-        await saveHabitNote(habitId, date, value);
+        await addHabitNote(habitId, date, value);
+        setText("");
         onSaved();
       } catch (cause) {
         setError(
@@ -146,7 +145,7 @@ function DayComposer({
           onChange={(event) => setText(event.target.value)}
           disabled={isPending}
           rows={6}
-          autoFocus={isToday && !saved}
+          autoFocus={isToday && !hasEntries}
           placeholder="a sentence is plenty."
           className="mt-4 resize-y leading-relaxed"
         />
@@ -160,24 +159,13 @@ function DayComposer({
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button
             type="submit"
-            disabled={isPending || !changed || !text.trim()}
+            disabled={isPending || !text.trim()}
             className="rounded-full lowercase"
           >
-            {isPending ? "saving…" : saved ? "save" : "plant it"}
+            {isPending ? "saving…" : hasEntries ? "add another" : "plant it"}
           </Button>
-          {saved ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isPending}
-              onClick={() => save("")}
-              className="rounded-full lowercase"
-            >
-              remove
-            </Button>
-          ) : null}
           <span className="ml-auto font-mono text-[10px] lowercase text-muted-foreground">
-            {saved ? "counts towards your year" : "saving marks the day"}
+            {hasEntries ? "adds to this day" : "saving marks the day"}
           </span>
         </div>
       </form>
