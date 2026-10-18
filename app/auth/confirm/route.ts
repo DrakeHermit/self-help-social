@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { db } from "@/lib/db";
+import { withRLS } from "@/lib/db";
 import { profilesTable } from "@/lib/db/schema";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
@@ -21,14 +21,16 @@ export async function GET(request: NextRequest) {
     if (!error) {
       const user = data.user;
       if (user) {
-        await db
-          .insert(profilesTable)
-          .values({
-            id: user.id,
-            name: user.user_metadata.name ?? "",
-            email: user.email!,
-          })
-          .onConflictDoNothing();
+        await withRLS({ sub: user.id }, (tx) =>
+          tx
+            .insert(profilesTable)
+            .values({
+              id: user.id,
+              name: user.user_metadata.name ?? "",
+              email: user.email!,
+            })
+            .onConflictDoNothing(),
+        );
       }
       redirect(next);
     } else {

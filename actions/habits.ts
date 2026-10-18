@@ -4,19 +4,28 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-import { db } from "@/lib/db";
+import { withRLS, type RLSTransaction } from "@/lib/db";
 import { habitEntries, habits } from "@/lib/db/schema";
 import { dayNumber, isValidISODate, todayISO } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/user";
 
-async function requireOwnedHabit(habitId: string): Promise<string> {
+async function requireUser() {
   const user = await getCurrentUser();
   if (!user) throw new Error("You need to be signed in.");
+  return user;
+}
 
-  const [habit] = await db
+// RLS already scopes these queries to the signed-in user; the explicit
+// ownership checks give a clear "not found" error instead of a silent no-op.
+async function requireOwnedHabit(
+  tx: RLSTransaction,
+  userId: string,
+  habitId: string,
+): Promise<string> {
+  const [habit] = await tx
     .select({ id: habits.id })
     .from(habits)
-    .where(and(eq(habits.id, habitId), eq(habits.userId, user.id)))
+    .where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
     .limit(1);
 
   if (!habit) throw new Error("Habit not found.");
@@ -27,35 +36,37 @@ export async function createHabit(
   name: string,
   description?: string | null,
 ): Promise<string> {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("You need to be signed in.");
+  const user = await requireUser();
 
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Give the habit a name.");
 
-  const [habit] = await db
-    .insert(habits)
-    .values({
-      id: randomUUID(),
-      userId: user.id,
-      name: trimmed,
-      description: description?.trim() || null,
-    })
-    .returning({ id: habits.id });
+  const [habit] = await withRLS({ sub: user.id }, (tx) =>
+    tx
+      .insert(habits)
+      .values({
+        id: randomUUID(),
+        userId: user.id,
+        name: trimmed,
+        description: description?.trim() || null,
+      })
+      .returning({ id: habits.id }),
+  );
 
   revalidatePath("/profile");
   return habit.id;
 }
 
-async function requireOwnedEntry(entryId: string): Promise<string> {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("You need to be signed in.");
-
-  const [entry] = await db
+async function requireOwnedEntry(
+  tx: RLSTransaction,
+  userId: string,
+  entryId: string,
+): Promise<string> {
+  const [entry] = await tx
     .select({ habitId: habitEntries.habitId })
     .from(habitEntries)
     .innerJoin(habits, eq(habitEntries.habitId, habits.id))
-    .where(and(eq(habitEntries.id, entryId), eq(habits.userId, user.id)))
+    .where(and(eq(habitEntries.id, entryId), eq(habits.userId, userId)))
     .limit(1);
 
   if (!entry?.habitId) throw new Error("Entry not found.");
@@ -72,7 +83,7 @@ export async function addHabitNote(
   date: string,
   note: string,
 ): Promise<void> {
-  await requireOwnedHabit(habitId);
+  const user = await requireUser();
 
   if (!isValidISODate(date)) throw new Error("That isn't a real date.");
   if (dayNumber(date) > dayNumber(todayISO())) {
@@ -82,12 +93,15 @@ export async function addHabitNote(
   const trimmed = note.trim();
   if (!trimmed) throw new Error("Write something first.");
 
-  await db.insert(habitEntries).values({
-    id: randomUUID(),
-    habitId,
-    date,
-    note: trimmed,
-    completed: true,
+  await withRLS({ sub: user.id }, async (tx) => {
+    await requireOwnedHabit(tx, user.id, habitId);
+    await tx.insert(habitEntries).values({
+      id: randomUUID(),
+      habitId,
+      date,
+      note: trimmed,
+      completed: true,
+    });
   });
 
   revalidateHabit(habitId);
@@ -97,23 +111,31 @@ export async function updateHabitNote(
   entryId: string,
   note: string,
 ): Promise<void> {
-  const habitId = await requireOwnedEntry(entryId);
+  const user = await requireUser();
 
   const trimmed = note.trim();
   if (!trimmed) throw new Error("An entry can't be empty. Delete it instead?");
 
-  await db
-    .update(habitEntries)
-    .set({ note: trimmed, updatedAt: new Date() })
-    .where(eq(habitEntries.id, entryId));
+  const habitId = await withRLS({ sub: user.id }, async (tx) => {
+    const habitId = await requireOwnedEntry(tx, user.id, entryId);
+    await tx
+      .update(habitEntries)
+      .set({ note: trimmed, updatedAt: new Date() })
+      .where(eq(habitEntries.id, entryId));
+    return habitId;
+  });
 
   revalidateHabit(habitId);
 }
 
 export async function deleteHabitNote(entryId: string): Promise<void> {
-  const habitId = await requireOwnedEntry(entryId);
+  const user = await requireUser();
 
-  await db.delete(habitEntries).where(eq(habitEntries.id, entryId));
+  const habitId = await withRLS({ sub: user.id }, async (tx) => {
+    const habitId = await requireOwnedEntry(tx, user.id, entryId);
+    await tx.delete(habitEntries).where(eq(habitEntries.id, entryId));
+    return habitId;
+  });
 
   revalidateHabit(habitId);
 }

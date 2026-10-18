@@ -1,4 +1,4 @@
-import { pgTable, pgSchema, uuid, text, timestamp, date, boolean, pgPolicy } from 'drizzle-orm/pg-core';
+import { pgTable, pgSchema, uuid, text, timestamp, date, boolean, pgPolicy, index } from 'drizzle-orm/pg-core';
 import { authenticatedRole } from "drizzle-orm/supabase";
 import { sql } from "drizzle-orm";
 
@@ -15,17 +15,38 @@ export const profilesTable = pgTable('profiles', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+},
+(table) => [
+  pgPolicy("users can view their own profile", {
+    for: "select",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.id}`,
+  }),
+  pgPolicy("users can insert their own profile", {
+    for: "insert",
+    to: authenticatedRole,
+    withCheck: sql`auth.uid() = ${table.id}`,
+  }),
+  pgPolicy("users can update their own profile", {
+    for: "update",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.id}`,
+    withCheck: sql`auth.uid() = ${table.id}`,
+  }),
+])
 
 export const habits = pgTable('habits', {
   id: uuid('id').primaryKey(),
-  userId: uuid('user_id').references(() => profilesTable.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => profilesTable.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(), 
 },
 (table) => [
+  index('habits_user_id_idx').on(table.userId),
   pgPolicy("users can view their own habits", {
     for: "select",
     to: authenticatedRole,
@@ -51,7 +72,9 @@ export const habits = pgTable('habits', {
 
 export const habitEntries = pgTable('habit_entries', {
   id: uuid('id').primaryKey(),
-  habitId: uuid('habit_id').references(() => habits.id, { onDelete: 'cascade' }),
+  habitId: uuid('habit_id')
+    .notNull()
+    .references(() => habits.id, { onDelete: 'cascade' }),
   date: date('date').notNull(),
   completed: boolean('completed').notNull().default(false),
   note: text('note'),
@@ -59,6 +82,7 @@ export const habitEntries = pgTable('habit_entries', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 },
 (table) => [
+  index('habit_entries_habit_id_date_idx').on(table.habitId, table.date),
   pgPolicy("users can view their own habit entries", {
     for: "select",
     to: authenticatedRole,
