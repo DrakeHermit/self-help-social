@@ -24,25 +24,33 @@ if (process.env.NODE_ENV !== "production") {
 // Bypasses RLS — table owner connection. Only for trusted admin/background work.
 export const db = drizzle({ client });
 
+export type RLSTransaction = Parameters<
+  Parameters<typeof db.transaction>[0]
+>[0];
+
+const RLS_ROLES = ["authenticated", "anon"] as const;
+type RLSRole = (typeof RLS_ROLES)[number];
+
 // Scoped client — runs a callback with RLS enforced for a specific user.
+// `set_config(..., true)` and `set local role` are transaction-scoped, so
+// they are discarded automatically when the transaction ends.
 export async function withRLS<T>(
-  claims: { sub: string; role?: string },
-  callback: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<T>
+  claims: { sub: string; role?: RLSRole },
+  callback: (tx: RLSTransaction) => Promise<T>,
 ): Promise<T> {
+  const role = claims.role ?? "authenticated";
+  if (!RLS_ROLES.includes(role)) {
+    throw new Error(`Unsupported RLS role: ${role}`);
+  }
+
   return db.transaction(async (tx) => {
-    try {
-      await tx.execute(sql`
-        select set_config('request.jwt.claims', ${JSON.stringify(claims)}, true);
-        select set_config('request.jwt.claim.sub', ${claims.sub}, true);
-        set local role ${sql.raw(claims.role ?? "authenticated")};
-      `);
-      return await callback(tx);
-    } finally {
-      await tx.execute(sql`
-        select set_config('request.jwt.claims', NULL, true);
-        select set_config('request.jwt.claim.sub', NULL, true);
-        reset role;
-      `);
-    }
+    await tx.execute(
+      sql`select set_config('request.jwt.claims', ${JSON.stringify({ ...claims, role })}, true)`,
+    );
+    await tx.execute(
+      sql`select set_config('request.jwt.claim.sub', ${claims.sub}, true)`,
+    );
+    await tx.execute(sql`select set_config('role', ${role}, true)`);
+    return callback(tx);
   });
 }

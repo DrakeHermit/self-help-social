@@ -6,7 +6,7 @@ import {
   type HabitFolder,
 } from "@/components/profile/HabitFolderCard";
 import { type ProfileStatsProps } from "@/components/profile/ProfileStats";
-import { db } from "@/lib/db";
+import { withRLS } from "@/lib/db";
 import { habitEntries, habits } from "@/lib/db/schema";
 import { dayNumber, relativeDayLabel, toISODate } from "@/lib/dates";
 
@@ -41,27 +41,29 @@ function daysInYear(year: number): number {
 
 export const getHabitFolders = cache(
   async (userId: string): Promise<HabitFolder[]> => {
-    const rows = await db
-      .select({
-        id: habits.id,
-        name: habits.name,
-        goal: habits.description,
-        entryCount: sql<number>`count(distinct ${habitEntries.date})`.mapWith(
-          Number,
-        ),
-        lastEntryDate: sql<string | null>`max(${habitEntries.date})`,
-      })
-      .from(habits)
-      .leftJoin(
-        habitEntries,
-        and(
-          eq(habitEntries.habitId, habits.id),
-          eq(habitEntries.completed, true),
-        ),
-      )
-      .where(eq(habits.userId, userId))
-      .groupBy(habits.id, habits.name, habits.description, habits.createdAt)
-      .orderBy(asc(habits.createdAt));
+    const rows = await withRLS({ sub: userId }, (tx) =>
+      tx
+        .select({
+          id: habits.id,
+          name: habits.name,
+          goal: habits.description,
+          entryCount: sql<number>`count(distinct ${habitEntries.date})`.mapWith(
+            Number,
+          ),
+          lastEntryDate: sql<string | null>`max(${habitEntries.date})`,
+        })
+        .from(habits)
+        .leftJoin(
+          habitEntries,
+          and(
+            eq(habitEntries.habitId, habits.id),
+            eq(habitEntries.completed, true),
+          ),
+        )
+        .where(eq(habits.userId, userId))
+        .groupBy(habits.id, habits.name, habits.description, habits.createdAt)
+        .orderBy(asc(habits.createdAt)),
+    );
 
     const today = toISODate(new Date());
 
@@ -83,24 +85,26 @@ export const getHabitFolders = cache(
 
 export const getDailyEntryCounts = cache(
   async (userId: string, year: number): Promise<Map<string, number>> => {
-    const rows = await db
-      .select({
-        date: habitEntries.date,
-        count: sql<number>`count(distinct ${habitEntries.habitId})`.mapWith(
-          Number,
-        ),
-      })
-      .from(habitEntries)
-      .innerJoin(habits, eq(habitEntries.habitId, habits.id))
-      .where(
-        and(
-          eq(habits.userId, userId),
-          eq(habitEntries.completed, true),
-          gte(habitEntries.date, `${year}-01-01`),
-          lte(habitEntries.date, `${year}-12-31`),
-        ),
-      )
-      .groupBy(habitEntries.date);
+    const rows = await withRLS({ sub: userId }, (tx) =>
+      tx
+        .select({
+          date: habitEntries.date,
+          count: sql<number>`count(distinct ${habitEntries.habitId})`.mapWith(
+            Number,
+          ),
+        })
+        .from(habitEntries)
+        .innerJoin(habits, eq(habitEntries.habitId, habits.id))
+        .where(
+          and(
+            eq(habits.userId, userId),
+            eq(habitEntries.completed, true),
+            gte(habitEntries.date, `${year}-01-01`),
+            lte(habitEntries.date, `${year}-12-31`),
+          ),
+        )
+        .groupBy(habitEntries.date),
+    );
 
     return new Map(rows.map((row) => [row.date, row.count]));
   },
@@ -127,28 +131,35 @@ export type HabitDetail = {
 
 export const getHabitDetail = cache(
   async (userId: string, habitId: string): Promise<HabitDetail | null> => {
-    const [habit] = await db
-      .select({
-        id: habits.id,
-        name: habits.name,
-        description: habits.description,
-      })
-      .from(habits)
-      .where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
-      .limit(1);
+    const found = await withRLS({ sub: userId }, async (tx) => {
+      const [habit] = await tx
+        .select({
+          id: habits.id,
+          name: habits.name,
+          description: habits.description,
+        })
+        .from(habits)
+        .where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
+        .limit(1);
 
-    if (!habit) return null;
+      if (!habit) return null;
 
-    const entries = await db
-      .select({
-        id: habitEntries.id,
-        date: habitEntries.date,
-        completed: habitEntries.completed,
-        note: habitEntries.note,
-      })
-      .from(habitEntries)
-      .where(eq(habitEntries.habitId, habit.id))
-      .orderBy(desc(habitEntries.date), desc(habitEntries.createdAt));
+      const entries = await tx
+        .select({
+          id: habitEntries.id,
+          date: habitEntries.date,
+          completed: habitEntries.completed,
+          note: habitEntries.note,
+        })
+        .from(habitEntries)
+        .where(eq(habitEntries.habitId, habit.id))
+        .orderBy(desc(habitEntries.date), desc(habitEntries.createdAt));
+
+      return { habit, entries };
+    });
+
+    if (!found) return null;
+    const { habit, entries } = found;
 
     const notes: HabitNote[] = [];
     const logged = new Set<string>();

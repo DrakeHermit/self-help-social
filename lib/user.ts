@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { eq } from "drizzle-orm";
 
-import { db } from "@/lib/db";
+import { withRLS } from "@/lib/db";
 import { profilesTable } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { getInitials } from "@/lib/utils";
@@ -36,11 +36,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const claimName = (claims.user_metadata as { name?: string } | undefined)
     ?.name;
 
-  const [profile] = await db
-    .select()
-    .from(profilesTable)
-    .where(eq(profilesTable.id, userId))
-    .limit(1);
+  const [profile] = await withRLS({ sub: userId }, (tx) =>
+    tx
+      .select()
+      .from(profilesTable)
+      .where(eq(profilesTable.id, userId))
+      .limit(1),
+  );
 
   const email = profile?.email ?? claimEmail;
   const localPart = email.split("@")[0] ?? "";

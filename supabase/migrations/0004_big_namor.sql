@@ -1,0 +1,11 @@
+ALTER TABLE "habit_entries" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "habits" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "habit_entries" ADD COLUMN "note" text;--> statement-breakpoint
+CREATE POLICY "users can view their own habit entries" ON "habit_entries" AS PERMISSIVE FOR SELECT TO "authenticated" USING (exists (select 1 from "habits" where "habits"."id" = "habit_entries"."habit_id" and "habits"."user_id" = auth.uid()));--> statement-breakpoint
+CREATE POLICY "users can insert their own habit entries" ON "habit_entries" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (exists (select 1 from "habits" where "habits"."id" = "habit_entries"."habit_id" and "habits"."user_id" = auth.uid()));--> statement-breakpoint
+CREATE POLICY "users can update their own habit entries" ON "habit_entries" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (exists (select 1 from "habits" where "habits"."id" = "habit_entries"."habit_id" and "habits"."user_id" = auth.uid())) WITH CHECK (exists (select 1 from "habits" where "habits"."id" = "habit_entries"."habit_id" and "habits"."user_id" = auth.uid()));--> statement-breakpoint
+CREATE POLICY "users can delete their own habit entries" ON "habit_entries" AS PERMISSIVE FOR DELETE TO "authenticated" USING (exists (select 1 from "habits" where "habits"."id" = "habit_entries"."habit_id" and "habits"."user_id" = auth.uid()));--> statement-breakpoint
+CREATE POLICY "users can view their own habits" ON "habits" AS PERMISSIVE FOR SELECT TO "authenticated" USING (auth.uid() = "habits"."user_id");--> statement-breakpoint
+CREATE POLICY "users can insert their own habits" ON "habits" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (auth.uid() = "habits"."user_id");--> statement-breakpoint
+CREATE POLICY "users can update their own habits" ON "habits" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (auth.uid() = "habits"."user_id") WITH CHECK (auth.uid() = "habits"."user_id");--> statement-breakpoint
+CREATE POLICY "users can delete their own habits" ON "habits" AS PERMISSIVE FOR DELETE TO "authenticated" USING (auth.uid() = "habits"."user_id");
