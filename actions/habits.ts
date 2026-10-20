@@ -6,8 +6,15 @@ import { revalidatePath } from "next/cache";
 
 import { withRLS, type RLSTransaction } from "@/lib/db";
 import { habitEntries, habits } from "@/lib/db/schema";
-import { dayNumber, isValidISODate, todayISO } from "@/lib/dates";
+import { dayNumber, todayISO } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/user";
+import {
+  addHabitNoteSchema,
+  createHabitSchema,
+  deleteHabitNoteSchema,
+  parseInput,
+  updateHabitNoteSchema,
+} from "@/lib/validation";
 
 async function requireUser() {
   const user = await getCurrentUser();
@@ -37,9 +44,7 @@ export async function createHabit(
   description?: string | null,
 ): Promise<string> {
   const user = await requireUser();
-
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error("Give the habit a name.");
+  const input = parseInput(createHabitSchema, { name, description });
 
   const [habit] = await withRLS({ sub: user.id }, (tx) =>
     tx
@@ -47,8 +52,8 @@ export async function createHabit(
       .values({
         id: randomUUID(),
         userId: user.id,
-        name: trimmed,
-        description: description?.trim() || null,
+        name: input.name,
+        description: input.description,
       })
       .returning({ id: habits.id }),
   );
@@ -84,27 +89,24 @@ export async function addHabitNote(
   note: string,
 ): Promise<void> {
   const user = await requireUser();
+  const input = parseInput(addHabitNoteSchema, { habitId, date, note });
 
-  if (!isValidISODate(date)) throw new Error("That isn't a real date.");
-  if (dayNumber(date) > dayNumber(todayISO())) {
+  if (dayNumber(input.date) > dayNumber(todayISO())) {
     throw new Error("You can't write ahead of today.");
   }
 
-  const trimmed = note.trim();
-  if (!trimmed) throw new Error("Write something first.");
-
   await withRLS({ sub: user.id }, async (tx) => {
-    await requireOwnedHabit(tx, user.id, habitId);
+    await requireOwnedHabit(tx, user.id, input.habitId);
     await tx.insert(habitEntries).values({
       id: randomUUID(),
-      habitId,
-      date,
-      note: trimmed,
+      habitId: input.habitId,
+      date: input.date,
+      note: input.note,
       completed: true,
     });
   });
 
-  revalidateHabit(habitId);
+  revalidateHabit(input.habitId);
 }
 
 export async function updateHabitNote(
@@ -112,16 +114,14 @@ export async function updateHabitNote(
   note: string,
 ): Promise<void> {
   const user = await requireUser();
-
-  const trimmed = note.trim();
-  if (!trimmed) throw new Error("An entry can't be empty. Delete it instead?");
+  const input = parseInput(updateHabitNoteSchema, { entryId, note });
 
   const habitId = await withRLS({ sub: user.id }, async (tx) => {
-    const habitId = await requireOwnedEntry(tx, user.id, entryId);
+    const habitId = await requireOwnedEntry(tx, user.id, input.entryId);
     await tx
       .update(habitEntries)
-      .set({ note: trimmed, updatedAt: new Date() })
-      .where(eq(habitEntries.id, entryId));
+      .set({ note: input.note, updatedAt: new Date() })
+      .where(eq(habitEntries.id, input.entryId));
     return habitId;
   });
 
@@ -130,10 +130,11 @@ export async function updateHabitNote(
 
 export async function deleteHabitNote(entryId: string): Promise<void> {
   const user = await requireUser();
+  const input = parseInput(deleteHabitNoteSchema, { entryId });
 
   const habitId = await withRLS({ sub: user.id }, async (tx) => {
-    const habitId = await requireOwnedEntry(tx, user.id, entryId);
-    await tx.delete(habitEntries).where(eq(habitEntries.id, entryId));
+    const habitId = await requireOwnedEntry(tx, user.id, input.entryId);
+    await tx.delete(habitEntries).where(eq(habitEntries.id, input.entryId));
     return habitId;
   });
 
