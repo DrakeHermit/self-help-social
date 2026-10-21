@@ -8,8 +8,6 @@ export const NOTE_MAX = 5000;
 export const PASSWORD_MIN = 6;
 export const PASSWORD_MAX = 72;
 
-// Throws an Error carrying the first issue's message, which is what the
-// client forms already display.
 export function parseInput<T extends z.ZodType>(
   schema: T,
   input: unknown,

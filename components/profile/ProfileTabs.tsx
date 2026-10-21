@@ -4,22 +4,24 @@ import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-type TabId = "garden" | "posts";
+type TabId = "garden" | "journal" | "posts";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "garden", label: "garden" },
+  { id: "journal", label: "journal" },
   { id: "posts", label: "posts" },
 ];
 
-const PLACEHOLDER_COPY: Record<Exclude<TabId, "garden">, string> = {
+const PLACEHOLDER_COPY: Record<Exclude<TabId, "garden" | "journal">, string> = {
   posts: "quiet posts you've chosen to share will show up here.",
 };
 
 export type ProfileTabsProps = {
   garden: React.ReactNode;
+  journal: React.ReactNode;
 };
 
-export function ProfileTabs({ garden }: ProfileTabsProps) {
+export function ProfileTabs({ garden, journal }: ProfileTabsProps) {
   const [active, setActive] = useState<TabId>("garden");
 
   return (
@@ -54,6 +56,8 @@ export function ProfileTabs({ garden }: ProfileTabsProps) {
       <div className="px-3 pt-6 lg:px-0">
         {active === "garden" ? (
           garden
+        ) : active === "journal" ? (
+          journal
         ) : (
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
             {PLACEHOLDER_COPY[active]}

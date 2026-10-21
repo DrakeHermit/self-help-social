@@ -5,6 +5,7 @@ import { ProfileHeader, type ProfileHeaderProps } from "./ProfileHeader";
 import { ProfileStats, type ProfileStatsProps } from "./ProfileStats";
 import { ProfileTabs } from "./ProfileTabs";
 import { HabitFolderGrid } from "./HabitFolderGrid";
+import { JournalPanel } from "./JournalPanel";
 import { type HabitFolder } from "./HabitFolderCard";
 
 export type ProfileViewProps = {
@@ -35,7 +36,10 @@ export function ProfileView({
           <ActivityHeatmap userId={userId} />
         </Suspense>
 
-        <ProfileTabs garden={<HabitFolderGrid folders={folders} />} />
+        <ProfileTabs
+          garden={<HabitFolderGrid folders={folders} />}
+          journal={<JournalPanel userId={userId} />}
+        />
       </div>
     </div>
   );
