@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { isValidISODate } from "@/lib/dates";
+import { htmlToText, sanitizeNoteHtml } from "@/lib/sanitize";
 
 export const NAME_MAX = 80;
 export const DESCRIPTION_MAX = 280;
@@ -32,12 +33,18 @@ const habitDescription = z
   .nullish()
   .transform((value) => value || null);
 
+// Notes are rich text (HTML). The length limit applies to the visible text,
+// with a looser cap on the raw markup so it can't be abused.
 const noteText = (emptyMessage: string) =>
   z
     .string()
-    .trim()
-    .min(1, emptyMessage)
-    .max(NOTE_MAX, `Keep entries under ${NOTE_MAX} characters.`);
+    .max(NOTE_MAX * 4, `Keep entries under ${NOTE_MAX} characters.`)
+    .transform((html) => sanitizeNoteHtml(html))
+    .refine((html) => htmlToText(html).length > 0, emptyMessage)
+    .refine(
+      (html) => htmlToText(html).length <= NOTE_MAX,
+      `Keep entries under ${NOTE_MAX} characters.`,
+    );
 
 export const createHabitSchema = z.object({
   name: habitName,

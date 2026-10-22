@@ -1,0 +1,1 @@
+ALTER TABLE "habit_entries" ADD COLUMN "note_format" text DEFAULT 'plain' NOT NULL;

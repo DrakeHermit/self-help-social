@@ -9,6 +9,8 @@ import { type ProfileStatsProps } from "@/components/profile/ProfileStats";
 import { withRLS } from "@/lib/db";
 import { habitEntries, habits } from "@/lib/db/schema";
 import { dayNumber, relativeDayLabel, toISODate } from "@/lib/dates";
+import { type NoteFormat } from "@/lib/rich-text";
+import { sanitizeNoteHtml } from "@/lib/sanitize";
 
 const ICON_KEYWORDS: [RegExp, string][] = [
   [/read|book|page/, "book"],
@@ -114,6 +116,7 @@ export type HabitNote = {
   id: string;
   date: string;
   note: string;
+  format: NoteFormat;
 };
 
 export type HabitDetail = {
@@ -150,6 +153,7 @@ export const getHabitDetail = cache(
           date: habitEntries.date,
           completed: habitEntries.completed,
           note: habitEntries.note,
+          noteFormat: habitEntries.noteFormat,
         })
         .from(habitEntries)
         .where(eq(habitEntries.habitId, habit.id))
@@ -164,8 +168,19 @@ export const getHabitDetail = cache(
     const notes: HabitNote[] = [];
     const logged = new Set<string>();
     for (const entry of entries) {
-      const note = entry.note?.trim();
-      if (note) notes.push({ id: entry.id, date: entry.date, note });
+      const raw = entry.note?.trim();
+      if (raw) {
+        // Sanitize again on read: rows can also be written straight through
+        // the Supabase API, which skips the server action.
+        const note =
+          entry.noteFormat === "html" ? sanitizeNoteHtml(raw) : raw;
+        notes.push({
+          id: entry.id,
+          date: entry.date,
+          note,
+          format: entry.noteFormat,
+        });
+      }
       if (entry.completed) logged.add(entry.date);
     }
     const loggedDates = [...logged];
