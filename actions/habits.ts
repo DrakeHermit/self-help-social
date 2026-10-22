@@ -102,6 +102,7 @@ export async function addHabitNote(
       habitId: input.habitId,
       date: input.date,
       note: input.note,
+      noteFormat: "html",
       completed: true,
     });
   });
@@ -120,7 +121,7 @@ export async function updateHabitNote(
     const habitId = await requireOwnedEntry(tx, user.id, input.entryId);
     await tx
       .update(habitEntries)
-      .set({ note: input.note, updatedAt: new Date() })
+      .set({ note: input.note, noteFormat: "html", updatedAt: new Date() })
       .where(eq(habitEntries.id, input.entryId));
     return habitId;
   });

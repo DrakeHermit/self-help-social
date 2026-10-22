@@ -78,6 +78,7 @@ export const habitEntries = pgTable('habit_entries', {
   date: date('date').notNull(),
   completed: boolean('completed').notNull().default(false),
   note: text('note'),
+  noteFormat: text('note_format', { enum: ['plain', 'html'] }).notNull().default('plain'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 },

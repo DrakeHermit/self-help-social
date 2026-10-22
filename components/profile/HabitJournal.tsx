@@ -8,9 +8,11 @@ import { addHabitNote, deleteHabitNote, updateHabitNote } from "@/actions/habits
 import { HabitCalendar } from "@/components/profile/HabitCalendar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichTextView } from "@/components/ui/rich-text-view";
 import { dayHeading } from "@/lib/dates";
 import { type HabitNote } from "@/lib/habits";
+import { noteToEditorHtml } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 
 export type HabitJournalProps = {
@@ -117,6 +119,7 @@ function DayComposer({
   onSaved,
 }: DayComposerProps) {
   const [text, setText] = useState("");
+  const [editorKey, setEditorKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -129,6 +132,7 @@ function DayComposer({
       try {
         await addHabitNote(habitId, date, value);
         setText("");
+        setEditorKey((key) => key + 1);
         onSaved();
       } catch (cause) {
         setError(
@@ -153,14 +157,16 @@ function DayComposer({
           {isToday ? "what grew today?" : "what happened that day?"}
         </h2>
 
-        <Textarea
+        <RichTextEditor
+          key={editorKey}
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={setText}
           disabled={isPending}
-          rows={6}
           autoFocus={isToday && !hasEntries}
           placeholder="a sentence is plenty."
-          className="mt-4 resize-y leading-relaxed"
+          aria-label="Write an entry"
+          className="mt-4"
+          contentClassName="min-h-[9rem]"
         />
 
         {error ? (
@@ -172,7 +178,7 @@ function DayComposer({
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button
             type="submit"
-            disabled={isPending || !text.trim()}
+            disabled={isPending || !text}
             className="rounded-full lowercase"
           >
             {isPending ? "saving…" : hasEntries ? "add another" : "plant it"}
@@ -196,11 +202,12 @@ type EntryCardProps = {
 function EntryCard({ entry, today, highlighted, onChanged }: EntryCardProps) {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [text, setText] = useState(entry.note);
+  const initialHtml = noteToEditorHtml(entry.note, entry.format);
+  const [text, setText] = useState(initialHtml);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const changed = text.trim() !== entry.note;
+  const changed = text !== initialHtml;
 
   function run(action: () => Promise<void>, fallback: string) {
     setError(null);
@@ -215,7 +222,7 @@ function EntryCard({ entry, today, highlighted, onChanged }: EntryCardProps) {
   }
 
   function save() {
-    if (!changed || !text.trim()) return;
+    if (!changed || !text) return;
     run(
       () => updateHabitNote(entry.id, text),
       "That didn't save. Try again?",
@@ -223,7 +230,7 @@ function EntryCard({ entry, today, highlighted, onChanged }: EntryCardProps) {
   }
 
   function cancel() {
-    setText(entry.note);
+    setText(initialHtml);
     setError(null);
     setEditing(false);
   }
@@ -312,22 +319,26 @@ function EntryCard({ entry, today, highlighted, onChanged }: EntryCardProps) {
             save();
           }}
         >
-          <Textarea
-            value={text}
-            onChange={(event) => setText(event.target.value)}
+          <div
             onKeyDown={(event) => {
               if (event.key === "Escape") cancel();
             }}
-            disabled={isPending}
-            rows={4}
-            autoFocus
-            className="mt-2 resize-y text-sm leading-relaxed"
-          />
+          >
+            <RichTextEditor
+              value={text}
+              onChange={setText}
+              disabled={isPending}
+              autoFocus
+              aria-label="Edit entry"
+              className="mt-2"
+              contentClassName="min-h-[6rem]"
+            />
+          </div>
           <div className="mt-3 flex items-center gap-2">
             <Button
               type="submit"
               size="sm"
-              disabled={isPending || !changed || !text.trim()}
+              disabled={isPending || !changed || !text}
               className="rounded-full lowercase"
             >
               {isPending ? "saving…" : "save"}
@@ -345,9 +356,11 @@ function EntryCard({ entry, today, highlighted, onChanged }: EntryCardProps) {
           </div>
         </form>
       ) : (
-        <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground">
-          {entry.note}
-        </p>
+        <RichTextView
+          note={entry.note}
+          format={entry.format}
+          className="mt-1.5"
+        />
       )}
 
       {error ? (
