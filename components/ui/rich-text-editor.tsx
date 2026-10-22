@@ -92,28 +92,39 @@ export function RichTextEditor({
 type ToolbarProps = { editor: Editor | null; disabled: boolean };
 
 function Toolbar({ editor, disabled }: ToolbarProps) {
+  // `useEditorState` must never be handed a null editor: if it starts with
+  // null it doesn't refresh when the editor appears, leaving the toolbar empty
+  // until the first transaction (e.g. clicking into the editor). So only mount
+  // it once the editor exists.
+  if (!editor) {
+    // Reserve the toolbar's height so the layout doesn't jump on mount.
+    return <div className="h-[2.8125rem] border-b border-border/70" aria-hidden />;
+  }
+  return <ToolbarButtons editor={editor} disabled={disabled} />;
+}
+
+function ToolbarButtons({
+  editor,
+  disabled,
+}: {
+  editor: Editor;
+  disabled: boolean;
+}) {
   const state = useEditorState({
     editor,
-    selector: ({ editor }) =>
-      editor
-        ? {
-            bold: editor.isActive("bold"),
-            italic: editor.isActive("italic"),
-            underline: editor.isActive("underline"),
-            strike: editor.isActive("strike"),
-            h2: editor.isActive("heading", { level: 2 }),
-            bulletList: editor.isActive("bulletList"),
-            orderedList: editor.isActive("orderedList"),
-            blockquote: editor.isActive("blockquote"),
-            canUndo: editor.can().undo(),
-            canRedo: editor.can().redo(),
-          }
-        : null,
+    selector: ({ editor }) => ({
+      bold: editor.isActive("bold"),
+      italic: editor.isActive("italic"),
+      underline: editor.isActive("underline"),
+      strike: editor.isActive("strike"),
+      h2: editor.isActive("heading", { level: 2 }),
+      bulletList: editor.isActive("bulletList"),
+      orderedList: editor.isActive("orderedList"),
+      blockquote: editor.isActive("blockquote"),
+      canUndo: editor.can().undo(),
+      canRedo: editor.can().redo(),
+    }),
   });
-
-  if (!editor || !state) {
-    return <div className="h-10 border-b border-border/70" aria-hidden />;
-  }
 
   const run = () => editor.chain().focus();
 
