@@ -1,13 +1,16 @@
 import { z } from "zod";
 
 import { isValidISODate } from "@/lib/dates";
+import {
+  DESCRIPTION_MAX,
+  JOURNAL_MAX,
+  JOURNAL_TITLE_MAX,
+  NAME_MAX,
+  NOTE_MAX,
+  PASSWORD_MAX,
+  PASSWORD_MIN,
+} from "@/lib/limits";
 import { htmlToText, sanitizeNoteHtml } from "@/lib/sanitize";
-
-export const NAME_MAX = 80;
-export const DESCRIPTION_MAX = 280;
-export const NOTE_MAX = 5000;
-export const PASSWORD_MIN = 6;
-export const PASSWORD_MAX = 72;
 
 export function parseInput<T extends z.ZodType>(
   schema: T,
@@ -35,15 +38,15 @@ const habitDescription = z
 
 // Notes are rich text (HTML). The length limit applies to the visible text,
 // with a looser cap on the raw markup so it can't be abused.
-const noteText = (emptyMessage: string) =>
+const noteText = (emptyMessage: string, max = NOTE_MAX) =>
   z
     .string()
-    .max(NOTE_MAX * 4, `Keep entries under ${NOTE_MAX} characters.`)
+    .max(max * 4, `Keep entries under ${max} characters.`)
     .transform((html) => sanitizeNoteHtml(html))
     .refine((html) => htmlToText(html).length > 0, emptyMessage)
     .refine(
-      (html) => htmlToText(html).length <= NOTE_MAX,
-      `Keep entries under ${NOTE_MAX} characters.`,
+      (html) => htmlToText(html).length <= max,
+      `Keep entries under ${max} characters.`,
     );
 
 export const createHabitSchema = z.object({
@@ -62,6 +65,18 @@ export const addHabitNoteSchema = z.object({
 export const updateHabitNoteSchema = z.object({
   entryId: id,
   note: noteText("An entry can't be empty. Delete it instead?"),
+});
+
+export const createJournalEntrySchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Give the entry a title.")
+    .max(
+      JOURNAL_TITLE_MAX,
+      `Keep the title under ${JOURNAL_TITLE_MAX} characters.`,
+    ),
+  content: noteText("Write something first.", JOURNAL_MAX),
 });
 
 export const deleteHabitNoteSchema = z.object({ entryId: id });

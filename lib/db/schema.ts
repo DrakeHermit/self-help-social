@@ -107,9 +107,47 @@ export const habitEntries = pgTable('habit_entries', {
   }),
 ])
 
+export const journalEntries = pgTable('journal_entries', {
+  id: uuid('id').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => profilesTable.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  // Sanitized HTML from the rich text editor.
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+},
+(table) => [
+  index('journal_entries_user_id_created_at_idx').on(table.userId, table.createdAt),
+  pgPolicy("users can view their own journal entries", {
+    for: "select",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.userId}`,
+  }),
+  pgPolicy("users can insert their own journal entries", {
+    for: "insert",
+    to: authenticatedRole,
+    withCheck: sql`auth.uid() = ${table.userId}`,
+  }),
+  pgPolicy("users can update their own journal entries", {
+    for: "update",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.userId}`,
+    withCheck: sql`auth.uid() = ${table.userId}`,
+  }),
+  pgPolicy("users can delete their own journal entries", {
+    for: "delete",
+    to: authenticatedRole,
+    using: sql`auth.uid() = ${table.userId}`,
+  }),
+])
+
 export type InsertProfile = typeof profilesTable.$inferInsert;
 export type SelectProfile = typeof profilesTable.$inferSelect;
 export type InsertHabit = typeof habits.$inferInsert;
 export type SelectHabit = typeof habits.$inferSelect;
 export type InsertHabitEntry = typeof habitEntries.$inferInsert;
 export type SelectHabitEntry = typeof habitEntries.$inferSelect;
+export type InsertJournalEntry = typeof journalEntries.$inferInsert;
+export type SelectJournalEntry = typeof journalEntries.$inferSelect;

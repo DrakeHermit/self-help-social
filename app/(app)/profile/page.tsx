@@ -5,6 +5,7 @@ import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FEATURES } from "@/lib/flags";
 import { getHabitFolders, getHabitStats } from "@/lib/habits";
+import { getJournalEntries } from "@/lib/journal";
 import { getCurrentUser } from "@/lib/user";
 
 const DEMO_USER = {
@@ -28,12 +29,13 @@ async function ProfileContent() {
   const current = await getCurrentUser();
   const user = current ?? DEMO_USER;
 
-  const [folders, stats] = current
+  const [folders, stats, journalEntries] = current
     ? await Promise.all([
         getHabitFolders(current.id),
         getHabitStats(current.id, new Date().getFullYear()),
+        getJournalEntries(current.id),
       ])
-    : [[], EMPTY_STATS];
+    : [[], EMPTY_STATS, []];
 
   const header = {
     name: user.name,
@@ -48,6 +50,7 @@ async function ProfileContent() {
       user={header}
       stats={stats}
       folders={folders}
+      journalEntries={journalEntries}
       userId={current?.id}
     />
   );

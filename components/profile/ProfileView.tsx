@@ -7,11 +7,13 @@ import { ProfileTabs } from "./ProfileTabs";
 import { HabitFolderGrid } from "./HabitFolderGrid";
 import { JournalPanel } from "./JournalPanel";
 import { type HabitFolder } from "./HabitFolderCard";
+import { type JournalEntry } from "@/lib/journal";
 
 export type ProfileViewProps = {
   user: ProfileHeaderProps;
   stats: ProfileStatsProps;
   folders: HabitFolder[];
+  journalEntries: JournalEntry[];
   userId?: string;
 };
 
@@ -19,6 +21,7 @@ export function ProfileView({
   user,
   stats,
   folders,
+  journalEntries,
   userId,
 }: ProfileViewProps) {
   return (
@@ -38,7 +41,7 @@ export function ProfileView({
 
         <ProfileTabs
           garden={<HabitFolderGrid folders={folders} />}
-          journal={<JournalPanel userId={userId} />}
+          journal={<JournalPanel userId={userId} entries={journalEntries} />}
         />
       </div>
     </div>

@@ -50,6 +50,13 @@
       "when": 1792658712840,
       "tag": "0006_rich_text_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793610329553,
+      "tag": "0007_journal_entries",
+      "breakpoints": true
     }
   ]
 }
