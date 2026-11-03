@@ -9,8 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { RichTextView } from "@/components/ui/rich-text-view";
-import { dayHeading, toISODate, todayISO } from "@/lib/dates";
+import { JournalEntryCard } from "@/components/profile/JournalEntryCard";
+import { dayHeading, todayISO } from "@/lib/dates";
 import { type JournalEntry } from "@/lib/journal";
 import { JOURNAL_TITLE_MAX } from "@/lib/limits";
 
@@ -206,22 +206,11 @@ export function JournalPanel({ userId, entries }: JournalPanelProps) {
         ) : (
           <ul className="mt-3 space-y-2">
             {entries.map((entry) => (
-              <li
-                key={entry.id}
-                className="rounded-2xl border border-border/70 bg-card/40 px-4 py-3"
-              >
-                <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {dayHeading(toISODate(new Date(entry.createdAt)), loaded.today)}
-                </span>
-                <h3 className="mt-1 font-serif text-lg tracking-tight text-foreground">
-                  {entry.title}
-                </h3>
-                <RichTextView
-                  note={entry.content}
-                  format="html"
-                  className="mt-1.5"
-                />
-              </li>
+              <JournalEntryCard
+                key={`${entry.id}:${entry.updatedAt}`}
+                entry={entry}
+                today={loaded.today}
+              />
             ))}
           </ul>
         )}

@@ -67,17 +67,29 @@ export const updateHabitNoteSchema = z.object({
   note: noteText("An entry can't be empty. Delete it instead?"),
 });
 
+const journalTitle = z
+  .string()
+  .trim()
+  .min(1, "Give the entry a title.")
+  .max(
+    JOURNAL_TITLE_MAX,
+    `Keep the title under ${JOURNAL_TITLE_MAX} characters.`,
+  );
+
+const journalContent = noteText("Write something first.", JOURNAL_MAX);
+
 export const createJournalEntrySchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Give the entry a title.")
-    .max(
-      JOURNAL_TITLE_MAX,
-      `Keep the title under ${JOURNAL_TITLE_MAX} characters.`,
-    ),
-  content: noteText("Write something first.", JOURNAL_MAX),
+  title: journalTitle,
+  content: journalContent,
 });
+
+export const updateJournalEntrySchema = z.object({
+  entryId: id,
+  title: journalTitle,
+  content: journalContent,
+});
+
+export const deleteJournalEntrySchema = z.object({ entryId: id });
 
 export const deleteHabitNoteSchema = z.object({ entryId: id });
 
