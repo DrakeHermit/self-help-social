@@ -10,6 +10,7 @@ export type JournalEntry = {
   title: string;
   content: string;
   createdAt: string;
+  updatedAt: string;
 };
 
 const ENTRY_LIMIT = 100;
@@ -23,6 +24,7 @@ export const getJournalEntries = cache(
           title: journalEntries.title,
           content: journalEntries.content,
           createdAt: journalEntries.createdAt,
+          updatedAt: journalEntries.updatedAt,
         })
         .from(journalEntries)
         .orderBy(desc(journalEntries.createdAt))
@@ -36,6 +38,7 @@ export const getJournalEntries = cache(
       title: row.title,
       content: sanitizeNoteHtml(row.content),
       createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
     }));
   },
 );
