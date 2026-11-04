@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
 
 import {
   FOLDER_TINT_KEYS,
@@ -7,7 +7,7 @@ import {
 } from "@/components/profile/HabitFolderCard";
 import { type ProfileStatsProps } from "@/components/profile/ProfileStats";
 import { withRLS } from "@/lib/db";
-import { habitEntries, habits } from "@/lib/db/schema";
+import { habitEntries, habits, journalEntries } from "@/lib/db/schema";
 import { dayNumber, relativeDayLabel, toISODate } from "@/lib/dates";
 import { type NoteFormat } from "@/lib/rich-text";
 import { sanitizeNoteHtml } from "@/lib/sanitize";
@@ -85,30 +85,55 @@ export const getHabitFolders = cache(
   },
 );
 
+// One point per completed habit per day, plus one point for any day with at
+// least one journal entry.
 export const getDailyEntryCounts = cache(
   async (userId: string, year: number): Promise<Map<string, number>> => {
-    const rows = await withRLS({ sub: userId }, (tx) =>
-      tx
-        .select({
-          date: habitEntries.date,
-          count: sql<number>`count(distinct ${habitEntries.habitId})`.mapWith(
-            Number,
+    const [habitRows, journalRows] = await withRLS(
+      { sub: userId },
+      async (tx) => [
+        await tx
+          .select({
+            date: habitEntries.date,
+            count: sql<number>`count(distinct ${habitEntries.habitId})`.mapWith(
+              Number,
+            ),
+          })
+          .from(habitEntries)
+          .innerJoin(habits, eq(habitEntries.habitId, habits.id))
+          .where(
+            and(
+              eq(habits.userId, userId),
+              eq(habitEntries.completed, true),
+              gte(habitEntries.date, `${year}-01-01`),
+              lte(habitEntries.date, `${year}-12-31`),
+            ),
+          )
+          .groupBy(habitEntries.date),
+        await tx
+          .select({ createdAt: journalEntries.createdAt })
+          .from(journalEntries)
+          .where(
+            and(
+              eq(journalEntries.userId, userId),
+              gte(journalEntries.createdAt, new Date(year, 0, 1)),
+              lt(journalEntries.createdAt, new Date(year + 1, 0, 1)),
+            ),
           ),
-        })
-        .from(habitEntries)
-        .innerJoin(habits, eq(habitEntries.habitId, habits.id))
-        .where(
-          and(
-            eq(habits.userId, userId),
-            eq(habitEntries.completed, true),
-            gte(habitEntries.date, `${year}-01-01`),
-            lte(habitEntries.date, `${year}-12-31`),
-          ),
-        )
-        .groupBy(habitEntries.date),
+      ] as const,
     );
 
-    return new Map(rows.map((row) => [row.date, row.count]));
+    const counts = new Map(habitRows.map((row) => [row.date, row.count]));
+
+    // Bucketed in JS so the day matches the local date shown on journal cards.
+    const journalDays = new Set(
+      journalRows.map((row) => toISODate(row.createdAt)),
+    );
+    for (const day of journalDays) {
+      counts.set(day, (counts.get(day) ?? 0) + 1);
+    }
+
+    return counts;
   },
 );
 
